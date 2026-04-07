@@ -8,6 +8,7 @@
 - 그룹화 전략 enum 도입
 - 그룹화 FastAPI + Swagger UI 연결
 - 공개 API와 내부 인프라 설정 경계 정리
+- Spring 오케스트레이터 설계 문서 작성
 
 ## 진행 중
 

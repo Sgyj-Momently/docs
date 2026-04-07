@@ -127,13 +127,14 @@ momently/
 ## 현재 핵심 문서
 
 - 전역 규칙: [Agent.md](../Agent.md)
+- 오케스트레이터 설계: [orchestrator-design.md](./orchestrator-design.md)
 - 그룹화 API 문서: [photo_grouping_agent/docs/api-spec.md](../photo_grouping_agent/docs/api-spec.md)
 - 그룹화 OpenAPI: [photo_grouping_agent/docs/openapi.yaml](../photo_grouping_agent/docs/openapi.yaml)
 - 그룹화 오케스트레이션 메모: [photo_grouping_agent/docs/orchestration.md](../photo_grouping_agent/docs/orchestration.md)
 
 ## 다음 단계
 
-- Spring 오케스트레이터 구조 문서화
+- Spring 오케스트레이터 구조를 코드 수준으로 구체화
 - 대표 사진 선택 에이전트 착수
 - 전략별 그룹화 규칙 분리 강화
 - gemma4 비교 실험
