@@ -86,6 +86,20 @@ momently/
   - `STORY_FLOW_BASED`
   - FastAPI `/docs` 지원
 
+### 3. Spring 오케스트레이터
+
+- 모듈: `spring_orchestrator`
+- 역할:
+  - 워크플로 생성/조회 API 제공
+  - 상태 머신 기반 단계 전이 관리
+  - 사진 정보 추출 -> 사진 그룹화 순차 실행 뼈대 제공
+  - `memory` / `postgres` 프로필 기반 저장소 구조 준비
+- 특징:
+  - 헥사고날 아키텍처
+  - ArchUnit 구조 테스트
+  - JaCoCo 커버리지 검증
+  - `UUIDv7`, `PostgreSQL` 방향 문서화 완료
+
 ## 역할 분리
 
 ### Spring Orchestrator
@@ -128,13 +142,15 @@ momently/
 
 - 전역 규칙: [Agent.md](../Agent.md)
 - 오케스트레이터 설계: [orchestrator-design.md](./orchestrator-design.md)
+- 세션 인수인계: [next-session-handoff.md](./next-session-handoff.md)
 - 그룹화 API 문서: [photo_grouping_agent/docs/api-spec.md](../photo_grouping_agent/docs/api-spec.md)
 - 그룹화 OpenAPI: [photo_grouping_agent/docs/openapi.yaml](../photo_grouping_agent/docs/openapi.yaml)
 - 그룹화 오케스트레이션 메모: [photo_grouping_agent/docs/orchestration.md](../photo_grouping_agent/docs/orchestration.md)
 
 ## 다음 단계
 
-- Spring 오케스트레이터 구조를 코드 수준으로 구체화
+- Spring 오케스트레이터의 실제 FastAPI 연동 구현
+- PostgreSQL 통합 테스트 추가
 - 대표 사진 선택 에이전트 착수
 - 전략별 그룹화 규칙 분리 강화
 - gemma4 비교 실험

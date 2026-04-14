@@ -9,9 +9,14 @@
 - 그룹화 FastAPI + Swagger UI 연결
 - 공개 API와 내부 인프라 설정 경계 정리
 - Spring 오케스트레이터 설계 문서 작성
+- Spring 오케스트레이터 기본 구현
+- 상태 머신 / 워크플로 러너 추가
+- JPA persistence adapter 초안 추가
+- Spring 테스트 커버리지 90% 이상 검증 추가
 
 ## 진행 중
 
+- Spring 오케스트레이터 실제 외부 연동 구현
 - 그룹화 규칙 정교화
 - 전략별 점수 모델 분리
 - `qwen2.5` / `gemma4` 비교 실험 준비
@@ -20,10 +25,10 @@
 
 ### 1. Spring 오케스트레이터 설계
 
-- 상태 머신 정의
-- 에이전트 호출 순서 정의
-- 실패/재시도 정책 정의
-- 에이전트 base URL 관리 방식 정리
+- `PhotoInfoAgentClient`, `PhotoGroupingAgentClient` 실제 HTTP 호출 구현
+- PostgreSQL 통합 테스트 및 스키마 전략 확정
+- 실행 API 확장
+- 실패/재시도/멱등성 시나리오 테스트 보강
 
 ### 2. photo_grouping_agent 고도화
 
@@ -63,3 +68,4 @@
 - Spring 설정 예시 정리
 - 개발/운영 환경 분리
 - 에이전트별 헬스 체크 및 모니터링 항목 정의
+- 다른 PC/CI 환경에서도 동일하게 실행 가능한 Gradle wrapper 기준 정리

@@ -54,6 +54,33 @@
 - 해당 값들을 서버 내부 환경 설정으로 이동
 - 공개 API에는 도메인 의도와 데이터만 남기기로 결정
 
+### Spring 오케스트레이터 방향 정리
+
+- Spring이 전체 파이프라인 순서와 상태 머신을 관리하는 구조로 방향 확정
+- `WorkflowStateMachine`, `WorkflowRunner` 중심의 순차 실행 뼈대 추가
+- 에이전트 호출은 outbound port/adapter를 통해서만 수행하도록 정리
+
+### 인프라 전략 의사결정
+
+- 외부 공개 식별자와 워크플로 식별자의 기본 전략을 `UUIDv7`로 정리
+- 기본 운영 DB를 `PostgreSQL`로 정리
+- 대용량 JSON 산출물은 DB 본문이 아니라 artifact 저장소로 분리하기로 결정
+- 높은 트래픽과 분산 가능성을 기본 가정으로 문서와 규칙을 보강
+
+### 문서화 작업
+
+- 전역 `Agent.md`에 문서화 원칙 추가
+- `spring_orchestrator/AGENT.md`에 ID 전략, DB 전략 원칙 추가
+- ADR `003`, `004` 추가
+- `docs/orchestrator-design.md`에 PostgreSQL, UUIDv7, artifact 분리 원칙 반영
+
+### 테스트 및 인수인계 정리
+
+- Spring 오케스트레이터 JaCoCo 커버리지 검증 추가
+- 기존 기능 기준 테스트 커버리지 90% 이상 확인
+- 다른 PC에서도 이어서 작업할 수 있도록 세션 인수인계 문서 추가
+- `spring_orchestrator/README.md`, `docs/project-overview.md`, `docs/roadmap.md`에 현재 상태와 다음 작업 반영
+
 ### 현재 상태
 
 - `photo_grouping_agent` 테스트 통과
