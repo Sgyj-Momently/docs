@@ -13,10 +13,15 @@
 - 상태 머신 / 워크플로 러너 추가
 - JPA persistence adapter 초안 추가
 - Spring 테스트 커버리지 90% 이상 검증 추가
+- Spring 워크플로 실행 API 추가
+- `PhotoInfoAgentClient`, `PhotoGroupingAgentClient` HTTP 호출 구조 추가
+- photo-info 결과 요약을 워크플로에 기록하고 photo-grouping 입력으로 전달
+- `photo_grouping_agent`의 `photo_info_bundle_path` 기반 입력 계약 추가
 
 ## 진행 중
 
 - Spring 오케스트레이터 실제 외부 연동 구현
+- 단계별 artifact 경로 저장 구조 설계
 - 그룹화 규칙 정교화
 - 전략별 점수 모델 분리
 - `qwen2.5` / `gemma4` 비교 실험 준비
@@ -25,9 +30,9 @@
 
 ### 1. Spring 오케스트레이터 설계
 
-- `PhotoInfoAgentClient`, `PhotoGroupingAgentClient` 실제 HTTP 호출 구현
+- 실제 FastAPI 서버 계약과 Spring HTTP 클라이언트 요청/응답 필드 정렬
+- 단계별 artifact 경로를 별도 step result 저장소로 분리할지 결정
 - PostgreSQL 통합 테스트 및 스키마 전략 확정
-- 실행 API 확장
 - 실패/재시도/멱등성 시나리오 테스트 보강
 
 ### 2. photo_grouping_agent 고도화

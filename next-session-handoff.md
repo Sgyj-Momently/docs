@@ -22,6 +22,8 @@
 - Ollama `llava` 기반 이미지 요약 가능
 - bundle JSON 생성 가능
 - writer model과 vision model 분리 가능
+- `POST /api/v1/photo-info` FastAPI 진입점 추가됨
+- `project_id`를 받아 내부 설정의 input/output root 기준으로 bundle 생성 가능
 
 ### photo_grouping_agent
 
@@ -29,11 +31,17 @@
 - FastAPI 진입점 존재
 - `/docs`, `/openapi.json` 확인 가능
 - 공개 API에서 `ollama_base_url`, `ollama_timeout_seconds` 제거 완료
+- `POST /api/v1/photo-groups`는 `photos` 직접 입력과 `photo_info_bundle_path` 기반 입력을 모두 지원
+- `photo_info_bundle_path` 입력 시 bundle JSON을 읽어 grouping `photos` 입력으로 변환
 
 ### spring_orchestrator
 
 - 헥사고날 구조 초안 존재
 - `WorkflowController`, `WorkflowService`, `WorkflowStateMachine`, `WorkflowRunner` 구현됨
+- `POST /api/v1/workflows/{workflowId}/run` 실행 API 추가됨
+- `PhotoInfoAgentClient`는 RestClient 기반 HTTP 호출로 교체됨
+- `PhotoGroupingAgentClient`는 RestClient 기반 HTTP 호출 구조 존재
+- `WorkflowRunner`는 photo-info 결과의 `photoCount`, `photoInfoBundlePath`를 기록하고 photo-grouping payload로 전달함
 - `memory` 프로필 저장소와 `postgres` 프로필 JPA adapter 존재
 - 테스트 및 JaCoCo 커버리지 검증 통과
 
@@ -58,10 +66,10 @@ env GRADLE_USER_HOME=.gradle-home GRADLE_OPTS='-Dorg.gradle.native=false' gradle
 
 ### 1. spring_orchestrator
 
-- `PhotoInfoAgentClient`를 실제 FastAPI 호출로 교체
-- `PhotoGroupingAgentClient`를 실제 FastAPI 호출로 교체
-- `POST /api/v1/workflows/{workflowId}/run` 같은 실행 API 설계/구현
+- 실제 배치/스토리지 환경에 맞게 `project_id -> input/output 경로` 매핑 방식 확정
+- 단계별 artifact 경로를 별도 step result 저장소로 분리할지 결정
 - PostgreSQL 통합 테스트 추가
+- 실패/재시도/멱등성 시나리오 테스트 보강
 
 ### 2. photo_grouping_agent
 

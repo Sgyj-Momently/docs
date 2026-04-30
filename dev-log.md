@@ -92,3 +92,41 @@
 - `qwen2.5:14b` 기반 LLM 보정은 아직 느린 편
 - `gemma4`는 설치 완료 후 비교 실험 예정
 - 그룹화 규칙은 더 전략별로 분리할 여지가 있음
+
+## 2026-04-23
+
+### Spring 오케스트레이터 실행 API
+
+- `POST /api/v1/workflows/{workflowId}/run` 실행 API 추가
+- photo-info 결과의 `photoCount`, `photoInfoBundlePath`를 워크플로에 기록
+- photo-info 산출물 경로와 사진 수를 photo-grouping 요청 payload에 전달
+- 그룹화 에이전트 결과의 `appliedGroupingStrategy`, `groupCount`를 워크플로 응답에 노출
+- 도메인 계층이 application DTO에 의존하지 않도록 `Workflow.recordGroupingResult` 경계를 정리
+- ArchUnit 헥사고날 구조 테스트 통과 확인
+
+### 에이전트 HTTP 연동
+
+- `PhotoInfoAgentClient`를 placeholder 응답에서 RestClient 기반 HTTP 호출로 교체
+- `agents.photo-info.base-url`, `agents.photo-info.endpoint` 설정 추가
+- photo-info 응답 DTO와 설정 바인딩 테스트 추가
+- `adapter/out` 경로가 `.gitignore`의 `out/` 패턴에 의해 무시되던 문제를 `/out/`로 좁혀 수정
+
+### photo_grouping_agent 계약 정렬
+
+- `POST /api/v1/photo-groups`가 `photos` 직접 입력뿐 아니라 `photo_info_bundle_path` 입력도 받을 수 있게 확장
+- `photo_info_bundle_path`가 들어오면 photo-info bundle JSON을 읽어 내부 `photos` 입력으로 변환
+- 응답에 `photo_info.photo_count`, `photo_info.bundle_path` 메타데이터 추가
+- grouping input JSON Schema, OpenAPI, API spec 문서 갱신
+
+### photo_info_agent 진입점 정리
+
+- `photo_exif_llm_pipeline`에 `POST /api/v1/photo-info` FastAPI 진입점 추가
+- `run_pipeline.py`를 재사용 가능한 함수로 분리해 CLI와 API가 같은 처리 흐름을 사용하도록 정리
+- `project_id`를 내부 `PHOTO_INFO_INPUT_ROOT`, `PHOTO_INFO_OUTPUT_ROOT` 경로로 해석하는 방식 도입
+- `photo_exif_llm_pipeline` 테스트에 API 진입점과 재사용 함수 검증 추가
+
+### 검증
+
+- `spring_orchestrator`: `gradle test jacocoTestReport jacocoTestCoverageVerification` 통과
+- `photo_grouping_agent`: `python3 -m unittest discover -s tests` 통과
+- `photo_exif_llm_pipeline`: `python3 -m unittest discover -s tests` 통과

@@ -66,6 +66,7 @@ momently/
   - EXIF 추출
   - 사진별 요약 생성
   - bundle JSON 생성
+  - FastAPI `POST /api/v1/photo-info` 제공
 - 특징:
   - Ollama 기반 `llava` 사진 분석
   - 텍스트 모델 기반 bundle 요약
