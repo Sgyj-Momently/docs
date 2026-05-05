@@ -29,7 +29,7 @@ VITE_API_BASE_URL=http://127.0.0.1:18080
 
 | 항목 | 설명 |
 |------|------|
-| 사진 | 프로젝트 ID 입력 또는 파일 직접 업로드 (드래그 앤 드롭 지원) |
+| 미디어 | 사진/동영상 직접 업로드 (드래그 앤 드롭 지원). 서버 묶음 ID 입력은 고급 옵션 |
 | 콘텐츠 유형 | 블로그 / 여행후기 / 음식후기 / 체험단 / 이벤트 |
 | 체험단 규칙 | 최소 사진 수, 간판 노출 여부, 상호명 언급 여부, 자유 입력 규칙 |
 | 작성 방향 | 사용자가 원하는 내용 방향 자유 입력 |
@@ -37,13 +37,15 @@ VITE_API_BASE_URL=http://127.0.0.1:18080
 | 고급 옵션 | 그룹화 전략, 시간 윈도우 (기본값으로 충분) |
 
 **실행 흐름**
-1. 워크플로 생성 (`POST /api/v1/workflows`)
-2. 즉시 실행 (`POST /api/v1/workflows/{id}/run`)
-3. 2초 폴링으로 상태 갱신
-4. `COMPLETED` 도달 시 아티팩트 탭 표시
+1. 업로드 모드에서는 미디어 저장 (`POST /api/v1/uploads/media`) 후 새 프로젝트 ID 수신
+2. 워크플로 생성 (`POST /api/v1/workflows`)
+3. 즉시 실행 (`POST /api/v1/workflows/{id}/run`)
+4. SSE 구독 (`GET /api/v1/workflows/{id}/events`)으로 상태 갱신
+   - SSE 연결 실패 시 2초 폴링으로 fallback
+5. `COMPLETED` 도달 시 아티팩트 탭 표시
 
-> **참고**: 파일 업로드 UI는 구현되어 있으나, 백엔드 업로드 API는 미구현 상태다.  
-> 현재 실제 동작은 "프로젝트 ID" 모드를 사용한다.
+> **참고**: 기본 흐름은 업로드 모드다. 서버 묶음 ID 입력은 이미 서버 입력 폴더에 준비된 미디어를
+> 재사용하거나 디버깅할 때만 고급 옵션에서 사용한다.
 
 ### 2. 말투 설정 (Tone)
 
@@ -67,9 +69,16 @@ VITE_API_BASE_URL=http://127.0.0.1:18080
 
 과거 워크플로 목록 조회 페이지.
 
-- `localStorage["momently_history"]`에 최대 50건 저장
-- 각 항목: `workflowId`, `contentType`, `createdAt`, `status`
+- `GET /api/v1/workflows`로 서버 저장소(Postgres/메모리 프로필)의 워크플로 목록 조회
+- 각 항목: `workflowId`, `projectId`, `groupingStrategy`, `status`
 - 클릭 시 API에서 최신 상태 조회 + 아티팩트 표시
+- `DELETE /api/v1/workflows`로 워크플로 메타데이터 기록 전체 삭제
+
+### 문체 다시 적용
+
+- 완료된 워크플로에서 `POST /api/v1/workflows/{id}/restyle` 호출
+- 서버는 `STYLE_APPLYING → REVIEWING → COMPLETED` 상태 이벤트를 SSE로 발행
+- 콘솔은 SSE를 우선 사용하고, 실패하면 기존 결과 아티팩트 폴링으로 fallback
 
 ### 4. 파이프라인 모니터 (Monitor)
 

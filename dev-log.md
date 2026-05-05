@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-05-05
+
+- Docker compose 환경에서 실제 업로드 API로 MP4 동영상을 올리고 전체 워크플로가 `COMPLETED`까지 도달하는 E2E 검증 완료
+- 실패 워크플로 재실행 시 정상 단계로 재진입하면 `lastFailedStep`, `lastErrorMessage`를 지우도록 도메인 규칙 보강
+- PostgreSQL 저장소 Testcontainers 통합 테스트를 추가하고 `RUN_POSTGRES_INTEGRATION_TESTS=true` opt-in 방식으로 정리
+- `photo_grouping_agent` LLM 보정 프롬프트를 전체 사진 목록 대신 그룹 후보와 필요한 사진 요약 중심으로 축약
+- `spring_orchestrator`, `momently_console`, `photo_exif_llm_pipeline`, `photo_grouping_agent` 표준 검증 통과 확인
+- Docker compose에 Python 에이전트, orchestrator, gateway healthcheck를 추가하고 orchestrator/gateway 기동 조건을 `service_healthy` 기준으로 강화
+- `POST /api/v1/workflows/{id}/retry`를 추가하고 `run`/`retry` 중복 요청을 멱등 응답으로 정리
+- 콘솔 실패 화면에 재시도 버튼을 연결하고, 실패한 수동 워크플로는 `retry` 엔드포인트를 호출하도록 변경
+- 사진/동영상 입력 폴더 누락 실패 메시지에서 내부 컨테이너 경로를 제거하고 사용자 행동 중심 문장으로 정리
+- 사진 분석과 동영상 대표 프레임 분석을 제한된 worker pool로 병렬 처리하도록 정리
+- Python CLI `--analysis-concurrency`, Spring `agents.photo-info.pipeline.analysis-concurrency`, Docker `PHOTO_PIPELINE_ANALYSIS_CONCURRENCY` 설정 연결
+
+## 2026-05-04
+
+- `spring_orchestrator` PostgreSQL persistence adapter의 도메인/JPA 매핑 및 repository 위임 단위 테스트 추가
+- 표준 검증 명령 `gradle test jacocoTestReport jacocoTestCoverageVerification` 통과 확인
+- 업로드 API를 사진 전용에서 미디어 업로드로 확장하고 `mp4`, `mov`, `m4v` 동영상 저장 지원 추가
+- 콘솔 파일 업로드 UI에서 사진과 동영상을 함께 선택할 수 있도록 확장
+- `photo_exif_llm_pipeline`에 동영상 스캔, `ffmpeg` 대표 프레임 추출, 기존 비전 모델 기반 동영상 요약 흐름 추가
+- 동영상 분석을 단일 대표 프레임에서 여러 대표 프레임 샘플링/요약 병합 방식으로 확장
+- Spring 오케스트레이터와 Docker 설정에 동영상 대표 프레임 샘플링 CLI 옵션 연결
+- 워크플로 실행/문체 재적용 진행 상태를 SSE 우선, 폴링 fallback 방식으로 갱신
+
 ## 2026-04-16
 
 - `photo_exif_llm_pipeline` 초기 구조 생성
