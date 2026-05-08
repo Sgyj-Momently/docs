@@ -272,6 +272,7 @@ agents:
 
 - `GET /api/v1/workflows`
 - `DELETE /api/v1/workflows`
+- `DELETE /api/v1/workflows/{workflowId}`
 
 ### 작업 상태 조회
 
@@ -302,6 +303,12 @@ agents:
 ### 문체 재적용
 
 - `POST /api/v1/workflows/{workflowId}/restyle`
+
+### 에이전트 HTTP 설정
+
+- `agents.http.connect-timeout-seconds`: FastAPI 에이전트 연결 timeout
+- `agents.http.read-timeout-seconds`: FastAPI 에이전트 응답 read timeout
+- Docker 프로필에서는 `MOMENTLY_AGENT_CONNECT_TIMEOUT_SECONDS`, `MOMENTLY_AGENT_READ_TIMEOUT_SECONDS`로 덮어쓸 수 있다.
 
 ## 다음 작업
 

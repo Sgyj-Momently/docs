@@ -46,6 +46,8 @@
 - `POST /api/v1/workflows/{workflowId}/retry`로 명시 재시도 가능
 - `run`/`retry` 중복 요청은 멱등 응답으로 처리
 - 입력 묶음 누락 같은 사용자-facing 실패 메시지는 내부 컨테이너 경로를 노출하지 않음
+- FastAPI 에이전트 HTTP 호출에는 공통 connect/read timeout 설정이 적용됨
+- HTTP 에이전트 `/health` 응답은 `status`와 `service` 필드를 공통으로 포함함
 - 테스트 및 JaCoCo 커버리지 검증 통과
 - PostgreSQL 저장소 Testcontainers 통합 테스트가 있으며 기본 검증에서는 skip, `RUN_POSTGRES_INTEGRATION_TESTS=true`로 opt-in 실행
 
@@ -54,9 +56,10 @@
 - 프로젝트 ID 입력 모드와 사진/동영상 직접 업로드 모드가 공존
 - 업로드 모드는 서버가 생성한 프로젝트 ID로 워크플로를 생성/실행
 - 서버 업로드 정책을 읽어 개수/용량/확장자/중복 파일을 사전 검증
-- 워크플로 기록 목록/검색/상태 필터/삭제와 결과 아티팩트 확인 가능
+- 워크플로 기록 목록/검색/상태 필터/개별 삭제/전체 삭제와 결과 아티팩트 확인 가능
 - 실패한 워크플로 화면과 작업 기록 상세에서 재시도 가능
 - 완료 결과물은 콘솔에서 편집하고 서버 저장본으로 남길 수 있음
+- 새 글쓰기 화면은 세션에 남은 최신 워크플로 ID를 기준으로 새로고침 후 진행/결과 화면을 복구함
 - 로그인 토큰은 기본 세션 저장이며, 사용자가 선택할 때만 브라우저 유지
 
 ## 스프링 표준 검증 명령
@@ -114,8 +117,7 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 - Ollama 실행 여부 확인
 - 필요한 모델(`qwen2.5vl:7b`, `qwen2.5:14b`, 필요 시 `gemma4`) 존재 확인
 - `spring_orchestrator` 테스트 먼저 통과 확인
-- `photo_exif_llm_pipeline/scripts/verify.sh`, `momently_console npm test/build`로 변경 영향 확인
-- `draft_agent/scripts/verify.sh`는 외부 Ollama 호출 없이 빠르게 통과해야 함
+- `./scripts/verify-core.sh`로 Spring, 콘솔, 핵심 에이전트, 사진/동영상 파이프라인 영향 확인
 - 새 기능 추가 전 관련 테스트부터 작성
 
 ## 주의 사항

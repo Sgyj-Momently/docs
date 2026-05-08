@@ -28,6 +28,7 @@
 - 작업 기록 검색/상태 필터와 상세 재시도 추적 추가
 - 업로드 제한 조회 API와 콘솔 사전 검증 동기화
 - 로그인 유지 옵션을 명시적으로 선택하는 방식으로 조정
+- 에이전트 HTTP 호출 공통 connect/read timeout 설정 추가
 
 ## 진행 중
 
@@ -42,7 +43,7 @@
 - Testcontainers가 Docker Desktop 29 소켓을 안정적으로 잡도록 CI/로컬 실행 환경 정리
 - 실패/재시도 시나리오를 API 레벨에서도 보강
 - 운영용 schema migration 전략 결정
-- 에이전트 호출 timeout/retry/backoff 정책 표준화
+- 에이전트 호출 retry/backoff 정책 표준화
 
 ### 2. photo_grouping_agent 고도화
 

@@ -7,9 +7,13 @@
 - 최종 결과물 편집본을 서버 artifact `edits/` 디렉터리에 저장/재조회하는 API와 콘솔 버튼 추가
 - 작업 기록 상세에서 실패 워크플로를 바로 재시도하고 SSE/폴링으로 진행 상태를 추적하도록 개선
 - 작업 기록 목록에 검색과 완료/실패 필터 추가
+- 새 글쓰기 진행 중 새로고침해도 최신 워크플로를 다시 불러와 진행/결과 화면으로 복구
 - 업로드 제한 조회 API(`GET /api/v1/uploads/config`)를 추가하고 콘솔 파일 검증/accept 속성을 서버 설정과 동기화
 - 업로드 UX에서 용량/개수/형식/중복 파일 제외 사유를 사용자에게 표시
 - 로그인 토큰은 기본적으로 sessionStorage에만 저장하고, 사용자가 선택할 때만 localStorage에 유지하도록 변경
+- 작업 기록 목록/상세에서 워크플로 메타데이터 한 건만 삭제하는 API와 콘솔 액션 추가
+- 에이전트 HTTP 호출 공통 connect/read timeout 설정과 Docker 환경변수 추가
+- HTTP 에이전트 `/health` 응답에 `service` 필드를 표준화하고 core 검증 범위를 확대
 - `draft_agent` 테스트가 실제 Ollama를 호출하지 않게 고정해 검증 시간을 39초대에서 밀리초 단위로 단축
 - `spring_orchestrator`, `momently_console`, `draft_agent`, `photo_exif_llm_pipeline` 검증 통과 확인
 
