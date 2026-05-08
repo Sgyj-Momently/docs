@@ -104,6 +104,12 @@ docker network inspect macmini-shared --format '{{range .Containers}}{{.Name}} {
 - **게이트 nginx**의 `/api/v1/voice-profiles` 구간은 Ollama 심층 분석까지 한 번에 걸릴 수 있어, `proxy_read_timeout`을 **600초**까지 두었다. 설정 변경 후에는 `momently-gateway` 이미지를 **`docker compose ... up -d --build momently-gateway`** 로 다시 빌드해야 반영된다.
 - **Cloudflare 프록시**를 쓰면(오렌지 구름 등) 엣지·터널 경로에 **약 100초 제한**이 있어, 그보다 오래 걸리는 학습은 여전히 504가 날 수 있다. 그때는 `VOICE_DEEP_ANALYSIS=0`으로 빠른 분석만 쓰거나, 로컬 `http://127.0.0.1:18580`으로 확인한다.
 
+## 대용량 업로드와 413
+
+- 게이트 nginx는 `client_max_body_size 150m`으로 맞춰져 있고, Spring multipart 기본값은 `max-request-size: 140MB`다.
+- 콘솔은 `GET /api/v1/uploads/config`로 서버 업로드 제한을 읽어 파일 개수·파일당 용량·전체 용량을 사전 검증한다.
+- Cloudflare 앞단에서 413이 나면 Cloudflare 플랜/정책의 업로드 제한에 걸린 것이다. 이 경우 `deploy/.env`의 업로드 제한을 더 낮추거나, 큰 동영상은 로컬 게이트(`http://127.0.0.1:18580`)에서 먼저 검증한다.
+
 ## 참고
 
 - 로컬 점검: `deploy/docker-compose.yml`에서 게이트는 `127.0.0.1:18580:80`(기본)으로 바인드.

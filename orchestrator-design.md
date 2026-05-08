@@ -268,17 +268,43 @@ agents:
 
 - `POST /api/v1/workflows`
 
+### 작업 목록/기록
+
+- `GET /api/v1/workflows`
+- `DELETE /api/v1/workflows`
+
 ### 작업 상태 조회
 
 - `GET /api/v1/workflows/{workflowId}`
 
-### 작업 재실행
+### 작업 실행/재실행
 
+- `POST /api/v1/workflows/{workflowId}/run`
 - `POST /api/v1/workflows/{workflowId}/retry`
+
+### 작업 이벤트
+
+- `GET /api/v1/workflows/{workflowId}/events` (SSE)
+
+### 업로드
+
+- `GET /api/v1/uploads/config`
+- `POST /api/v1/uploads/media`
+- `POST /api/v1/uploads/images` (호환 경로)
+
+### 산출물
+
+- `GET /api/v1/workflows/{workflowId}/artifacts/{artifactType}`
+- `POST /api/v1/workflows/{workflowId}/artifacts/{artifactType}/edits`
+- `GET /api/v1/workflows/{workflowId}/artifacts/{artifactType}/edits/latest`
+- `GET /api/v1/workflows/{workflowId}/files/{fileName}`
+
+### 문체 재적용
+
+- `POST /api/v1/workflows/{workflowId}/restyle`
 
 ## 다음 작업
 
-- Spring DTO 초안 작성
-- 상태 enum을 코드 형태로 구체화
-- `photo_grouping_agent` 호출용 AgentClient 예시 추가
-- `hero_photo_agent` 계약 설계
+- 브라우저 E2E로 업로드 → 완료 → 결과 수정 저장 흐름 검증
+- 운영용 artifact 보존/삭제 정책 구체화
+- 에이전트 호출 retry/backoff 표준화

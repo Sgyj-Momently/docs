@@ -38,6 +38,7 @@
 - `WorkflowController`, `WorkflowService`, `WorkflowStateMachine`, `WorkflowRunner` 구현됨
 - `memory` 프로필 저장소와 `postgres` 프로필 JPA adapter 존재
 - `/api/v1/uploads/media`로 사진/동영상 업로드 후 프로젝트 ID 생성 가능
+- `/api/v1/uploads/config`로 현재 업로드 제한과 지원 확장자 조회 가능
 - `local-photo-info` 실행 시 동영상 프레임 샘플링 옵션을 CLI로 전달
 - Docker compose 환경에서 업로드된 MP4 동영상 워크플로가 `COMPLETED`까지 도달함을 확인
 - 워크플로 실행/문체 재적용 진행 상태는 SSE 우선, 폴링 fallback 방식으로 갱신
@@ -52,10 +53,19 @@
 
 - 프로젝트 ID 입력 모드와 사진/동영상 직접 업로드 모드가 공존
 - 업로드 모드는 서버가 생성한 프로젝트 ID로 워크플로를 생성/실행
-- 워크플로 기록 목록/삭제와 결과 아티팩트 확인 가능
-- 실패한 워크플로 화면에서 재시도 가능
+- 서버 업로드 정책을 읽어 개수/용량/확장자/중복 파일을 사전 검증
+- 워크플로 기록 목록/검색/상태 필터/삭제와 결과 아티팩트 확인 가능
+- 실패한 워크플로 화면과 작업 기록 상세에서 재시도 가능
+- 완료 결과물은 콘솔에서 편집하고 서버 저장본으로 남길 수 있음
+- 로그인 토큰은 기본 세션 저장이며, 사용자가 선택할 때만 브라우저 유지
 
 ## 스프링 표준 검증 명령
+
+핵심 모듈 전체를 한 번에 보려면:
+
+```bash
+./scripts/verify-core.sh
+```
 
 현재 환경 차이를 줄이기 위해 아래 명령을 표준으로 사용한다.
 
@@ -105,6 +115,7 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 - 필요한 모델(`qwen2.5vl:7b`, `qwen2.5:14b`, 필요 시 `gemma4`) 존재 확인
 - `spring_orchestrator` 테스트 먼저 통과 확인
 - `photo_exif_llm_pipeline/scripts/verify.sh`, `momently_console npm test/build`로 변경 영향 확인
+- `draft_agent/scripts/verify.sh`는 외부 Ollama 호출 없이 빠르게 통과해야 함
 - 새 기능 추가 전 관련 테스트부터 작성
 
 ## 주의 사항

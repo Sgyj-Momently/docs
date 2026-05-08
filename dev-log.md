@@ -1,5 +1,18 @@
 # Development Log
 
+## 2026-05-08
+
+- 콘솔 새 글 쓰기 UI를 일반 사용자용 3단계 흐름으로 정리하고 프로젝트 ID 입력을 고급 옵션으로 이동
+- 콘텐츠 유형/작성 방향/체험단 규칙을 워크플로 생성 요청에 포함하고 draft agent 프롬프트까지 전달
+- 최종 결과물 편집본을 서버 artifact `edits/` 디렉터리에 저장/재조회하는 API와 콘솔 버튼 추가
+- 작업 기록 상세에서 실패 워크플로를 바로 재시도하고 SSE/폴링으로 진행 상태를 추적하도록 개선
+- 작업 기록 목록에 검색과 완료/실패 필터 추가
+- 업로드 제한 조회 API(`GET /api/v1/uploads/config`)를 추가하고 콘솔 파일 검증/accept 속성을 서버 설정과 동기화
+- 업로드 UX에서 용량/개수/형식/중복 파일 제외 사유를 사용자에게 표시
+- 로그인 토큰은 기본적으로 sessionStorage에만 저장하고, 사용자가 선택할 때만 localStorage에 유지하도록 변경
+- `draft_agent` 테스트가 실제 Ollama를 호출하지 않게 고정해 검증 시간을 39초대에서 밀리초 단위로 단축
+- `spring_orchestrator`, `momently_console`, `draft_agent`, `photo_exif_llm_pipeline` 검증 통과 확인
+
 ## 2026-05-05
 
 - Docker compose 환경에서 실제 업로드 API로 MP4 동영상을 올리고 전체 워크플로가 `COMPLETED`까지 도달하는 E2E 검증 완료
