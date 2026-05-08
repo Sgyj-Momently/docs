@@ -3,7 +3,7 @@
 ## 개요
 
 `momently_console`은 Momently 파이프라인을 조작하고 결과를 확인하는 React 기반 웹 콘솔이다.  
-Vite + React 19 + lucide-react로 구성되며, 별도 라우터 없이 상태 기반 페이지 전환을 사용한다.
+Vite + React 19 + React Router + lucide-react로 구성된다.
 
 ## 실행
 
@@ -29,7 +29,7 @@ VITE_API_BASE_URL=http://127.0.0.1:18080
 
 | 항목 | 설명 |
 |------|------|
-| 사진 | 프로젝트 ID 입력 또는 파일 직접 업로드 (드래그 앤 드롭 지원) |
+| 미디어 | 사진/동영상 직접 업로드 (드래그 앤 드롭 지원). 서버 묶음 ID 입력은 고급 옵션 |
 | 콘텐츠 유형 | 블로그 / 여행후기 / 음식후기 / 체험단 / 이벤트 |
 | 체험단 규칙 | 최소 사진 수, 간판 노출 여부, 상호명 언급 여부, 자유 입력 규칙 |
 | 작성 방향 | 사용자가 원하는 내용 방향 자유 입력 |
@@ -37,13 +37,18 @@ VITE_API_BASE_URL=http://127.0.0.1:18080
 | 고급 옵션 | 그룹화 전략, 시간 윈도우 (기본값으로 충분) |
 
 **실행 흐름**
-1. 워크플로 생성 (`POST /api/v1/workflows`)
-2. 즉시 실행 (`POST /api/v1/workflows/{id}/run`)
-3. 2초 폴링으로 상태 갱신
-4. `COMPLETED` 도달 시 아티팩트 탭 표시
+1. 서버 업로드 정책 조회 (`GET /api/v1/uploads/config`)
+2. 업로드 모드에서는 미디어 저장 (`POST /api/v1/uploads/media`) 후 새 프로젝트 ID 수신
+3. 워크플로 생성 (`POST /api/v1/workflows`)
+4. 즉시 실행 (`POST /api/v1/workflows/{id}/run`)
+5. SSE 구독 (`GET /api/v1/workflows/{id}/events`)으로 상태 갱신
+   - SSE 연결 실패 시 2초 폴링으로 fallback
+6. `COMPLETED` 도달 시 아티팩트 탭 표시
+7. 진행 중 또는 완료된 최신 글쓰기 워크플로 ID는 세션에 보존해 새로고침 후에도 같은 작업 화면을 복구한다.
 
-> **참고**: 파일 업로드 UI는 구현되어 있으나, 백엔드 업로드 API는 미구현 상태다.  
-> 현재 실제 동작은 "프로젝트 ID" 모드를 사용한다.
+> **참고**: 기본 흐름은 업로드 모드다. 서버 묶음 ID 입력은 이미 서버 입력 폴더에 준비된 미디어를
+> 재사용하거나 디버깅할 때만 고급 옵션에서 사용한다.
+> 콘솔은 서버가 내려준 업로드 개수/용량/확장자 제한을 기준으로 사전 검증하며, 중복 선택한 파일은 제외한다.
 
 ### 2. 말투 설정 (Tone)
 
@@ -59,17 +64,28 @@ VITE_API_BASE_URL=http://127.0.0.1:18080
 | `info` | 정보형 | 사실 위주의 깔끔한 정보 전달 |
 
 **사용자 말투**
-- `localStorage["momently_tones"]`에 JSON 배열로 저장
-- 이름 + 설명 + 샘플 문장으로 구성
-- 새 글 쓰기 페이지의 말투 선택에서 프리셋처럼 사용 가능
+- `voice_profile_agent`에 프로필과 샘플을 저장한다.
+- TipTap 에디터에 기존 글과 이미지를 붙여넣을 수 있으며, 이미지는 학습 저장 전에 JPEG data URL로 축소한다.
+- 새 글 쓰기 페이지의 말투 선택에서 서버 프로필을 프리셋처럼 사용 가능하다.
 
 ### 3. 작업 기록 (History)
 
 과거 워크플로 목록 조회 페이지.
 
-- `localStorage["momently_history"]`에 최대 50건 저장
-- 각 항목: `workflowId`, `contentType`, `createdAt`, `status`
+- `GET /api/v1/workflows`로 서버 저장소(Postgres/메모리 프로필)의 워크플로 목록 조회
+- 각 항목: `workflowId`, `projectId`, `groupingStrategy`, `status`
+- 검색/상태 필터로 기록을 좁힐 수 있다.
 - 클릭 시 API에서 최신 상태 조회 + 아티팩트 표시
+- 실패한 작업은 상세 화면에서 바로 `retry` 가능하며, 재시도 후 SSE/폴링으로 진행 상태를 추적한다.
+- 개별 항목 또는 상세 화면에서 `DELETE /api/v1/workflows/{id}`로 워크플로 메타데이터 기록 한 건을 삭제할 수 있다.
+- `DELETE /api/v1/workflows`로 워크플로 메타데이터 기록 전체 삭제
+
+### 문체 다시 적용
+
+- 완료된 워크플로에서 `POST /api/v1/workflows/{id}/restyle` 호출
+- 서버는 `STYLE_APPLYING → REVIEWING → COMPLETED` 상태 이벤트를 SSE로 발행
+- 콘솔은 SSE를 우선 사용하고, 실패하면 기존 결과 아티팩트 폴링으로 fallback
+- 최종 결과물은 화면에서 편집 가능하며, `POST /api/v1/workflows/{id}/artifacts/{type}/edits`로 서버 저장본을 남긴다.
 
 ### 4. 파이프라인 모니터 (Monitor)
 
@@ -123,14 +139,12 @@ VITE_API_BASE_URL=http://127.0.0.1:18080
 | 빌드 도구 | Vite 7 |
 | 아이콘 | lucide-react |
 | 상태 | React useState (로컬) + localStorage (영속) |
-| 라우팅 | 상태 기반 (react-router 미사용) |
+| 라우팅 | react-router-dom |
 | 스타일 | 단일 CSS 파일 + CSS variables |
 | 환경변수 | `VITE_API_BASE_URL` |
 
 ## 개선 예정
 
-- 파일 업로드 백엔드 API 연동
 - 마크다운 렌더러 교체 (`marked` 등)
-- 말투 학습 자동화: 기존 블로그 글 붙여넣기 → LLM이 문체 분석해서 프리셋 생성
 - 에러/성공 토스트 알림 분리
-- 모바일 최적화 (하단 네비게이션)
+- 모바일 세부 QA

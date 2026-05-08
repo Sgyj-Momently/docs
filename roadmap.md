@@ -13,10 +13,25 @@
 - 상태 머신 / 워크플로 러너 추가
 - JPA persistence adapter 초안 추가
 - Spring 테스트 커버리지 90% 이상 검증 추가
+- 사진/동영상 업로드 API와 콘솔 업로드 모드 추가
+- 동영상 대표 프레임 추출 및 요약 병합 흐름 추가
+- 동영상 프레임 샘플링 옵션을 Spring/Docker 설정까지 연결
+- Docker compose 기준 사진/동영상 업로드 E2E 검증 완료
+- 워크플로 실행/문체 재적용 상태 SSE 갱신 추가
+- 실패 후 재실행 시 실패 메타데이터 정리 규칙 보강
+- PostgreSQL 저장소 Testcontainers 통합 테스트 추가
+- `photo_grouping_agent` LLM 보정 입력을 그룹 후보 중심으로 축약
+- Docker compose healthcheck와 `service_healthy` 기동 조건 추가
+- 워크플로 `retry` API와 콘솔 재시도 UX 추가
+- 사용자-facing 실패 메시지에서 내부 컨테이너 경로 노출 제거
+- 콘솔 결과물 서버 저장본/편집본 흐름 추가
+- 작업 기록 검색/상태 필터와 상세 재시도 추적 추가
+- 업로드 제한 조회 API와 콘솔 사전 검증 동기화
+- 로그인 유지 옵션을 명시적으로 선택하는 방식으로 조정
+- 에이전트 HTTP 호출 공통 connect/read timeout 설정 추가
 
 ## 진행 중
 
-- Spring 오케스트레이터 실제 외부 연동 구현
 - 그룹화 규칙 정교화
 - 전략별 점수 모델 분리
 - `qwen2.5` / `gemma4` 비교 실험 준비
@@ -25,24 +40,23 @@
 
 ### 1. Spring 오케스트레이터 설계
 
-- `PhotoInfoAgentClient`, `PhotoGroupingAgentClient` 실제 HTTP 호출 구현
-- PostgreSQL 통합 테스트 및 스키마 전략 확정
-- 실행 API 확장
-- 실패/재시도/멱등성 시나리오 테스트 보강
+- Testcontainers가 Docker Desktop 29 소켓을 안정적으로 잡도록 CI/로컬 실행 환경 정리
+- 실패/재시도 시나리오를 API 레벨에서도 보강
+- 운영용 schema migration 전략 결정
+- 에이전트 호출 retry/backoff 정책 표준화
 
 ### 2. photo_grouping_agent 고도화
 
 - 전략별 규칙을 분리된 프로필 구조로 리팩터링
-- LLM 보정 입력을 그룹 후보 요약 중심으로 축약
 - gemma4 비교 실험
 - 메타 부족 그룹 fallback 개선
 
-### 3. hero_photo_agent 착수
+### 3. 운영 정리
 
-- 그룹별 대표 사진 선택 기준 정의
-- 입력/출력 스키마 설계
-- API 명세 작성
-- FastAPI 진입점 추가
+- 에이전트별 헬스 체크 및 장애 메시지 표준화
+- SSE 연결/재연결 동작을 브라우저 E2E로 검증
+- 결과물 서버 저장본의 보존/삭제 정책 결정
+- 다른 PC/CI 환경에서도 동일하게 실행 가능한 Docker/Testcontainers 설정 정리
 
 ## 이후 단계
 
