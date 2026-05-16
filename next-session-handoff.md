@@ -76,6 +76,24 @@
 - 결과물 수정본은 latest 파일을 유지하고, 타임스탬프 버전 파일은 설정 개수만 보존함
 - 새 글쓰기 화면은 세션에 남은 최신 워크플로 ID를 기준으로 새로고침 후 진행/결과 화면을 복구함
 - 로그인 토큰은 기본 세션 저장이며, 사용자가 선택할 때만 브라우저 유지
+- 말투 학습 화면에서 공개 네이버 블로그 URL을 넣으면 `voice_profile_agent`가 본문을 추출해 샘플로 학습 가능
+- 로컬 확인은 `./scripts/docker-up.sh`로 Docker compose 이미지를 rebuild/up한 뒤 콘솔 정적 앱, 로그인, 인증 API, 말투 프로필/URL 학습 라우트 smoke test까지 돌리는 흐름을 표준으로 사용
+- 회원가입은 `MOMENTLY_SIGNUP_INVITE_CODE`가 설정된 경우에만 활성화되는 초대 코드 방식으로 구현. Docker 확인 스크립트는 가입 후 발급 토큰으로 보호 API 접근까지 검증
+- Docker smoke test는 말투 샘플 빠른 학습 결과를 style agent의 `deterministic_voice` 적용까지 넘겨 실제 문체 적용 경로도 확인
+- Docker smoke test는 `VOICE_BLOG_IMPORT_FIXTURE_MAP` 기본값으로 fixture 기반 네이버 블로그 URL 본문 추출/학습도 확인
+
+### voice_profile_agent
+
+- 말투 샘플은 직접 붙여넣기와 공개 네이버 블로그 URL 입력을 모두 지원
+- 네이버 블로그 URL은 모바일 글 URL로 정규화한 뒤 본문 컨테이너 텍스트를 추출
+- Ollama 말투 분석/예시 생성 호출은 `VOICE_ANALYSIS_MODEL`, `VOICE_ANALYSIS_TEMPERATURE`, `VOICE_ANALYSIS_TOP_P`로 조정 가능
+- 샘플 추가 요청에 `fast_analysis: true`를 넣으면 해당 요청은 Ollama 심층 분석 없이 로컬 통계만 갱신하므로 Docker smoke test에서 사용
+- `VOICE_BLOG_IMPORT_FIXTURE_MAP`은 정규화된 네이버 블로그 URL을 `voice_profile_agent/src` 내부 HTML fixture 경로로 매핑하는 JSON 객체이며, Docker smoke에서 외부 네트워크 없이 URL 학습을 검증하는 용도
+
+### style_agent
+
+- `deterministic_voice: true`를 요청에 넣으면 Ollama 재작성 없이 저장된 voice profile 특징으로 빠른 문체 적용을 수행
+- 이 옵션은 Docker smoke test와 빠른 로컬 확인용이며 기본 글쓰기 흐름은 기존처럼 LLM 재작성 우선
 
 ## 스프링 표준 검증 명령
 
@@ -113,6 +131,7 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 
 - Testcontainers가 Docker Desktop 29 소켓을 안정적으로 잡도록 CI/로컬 실행 환경 정리
 - 운영 schema migration 전략 결정
+- 회원가입 계정 관리 UX(비밀번호 변경/초대 코드 회전/사용자 비활성화) 범위 결정
 
 ### 2. photo_grouping_agent
 
@@ -131,6 +150,7 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 - 필요한 모델(`qwen2.5vl:7b`, `qwen2.5:14b`, 필요 시 `gemma4`) 존재 확인
 - `spring_orchestrator` 테스트 먼저 통과 확인
 - `./scripts/verify-core.sh`로 Spring, 콘솔, 핵심 에이전트, 사진/동영상 파이프라인 영향 확인
+- Docker 확인은 `./scripts/docker-up.sh` 또는 `./scripts/docker-up.sh momently-voice-profile momently-gateway` 실행 후 `http://127.0.0.1:18580`에서 확인
 - 새 기능 추가 전 관련 테스트부터 작성
 
 ## 주의 사항

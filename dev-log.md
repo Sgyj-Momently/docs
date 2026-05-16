@@ -30,6 +30,12 @@
 - 결과물 수정본 latest 유지와 타임스탬프 버전 파일 보존 개수 제한 정책 추가
 - `draft_agent` 테스트가 실제 Ollama를 호출하지 않게 고정해 검증 시간을 39초대에서 밀리초 단위로 단축
 - `spring_orchestrator`, `momently_console`, `draft_agent`, `photo_exif_llm_pipeline` 검증 통과 확인
+- `voice_profile_agent`에 공개 네이버 블로그 URL 샘플 추가 API를 붙이고, 콘솔 말투 학습 화면에서 URL만으로 본문 추출/말투 분석을 시작할 수 있게 함
+- 말투 분석 Ollama 호출에 `VOICE_ANALYSIS_TEMPERATURE`, `VOICE_ANALYSIS_TOP_P` 옵션을 추가해 모델 파라미터를 환경변수로 조정 가능하게 함
+- Docker 기준 확인용 `scripts/docker-up.sh`, `scripts/verify-docker-stack.sh`를 추가해 compose rebuild/up 후 콘솔 정적 앱, 로그인, 인증 API, 말투 프로필/URL 학습 라우트 smoke test를 한 번에 실행
+- 말투 샘플 추가 요청에 `fast_analysis` 옵션을 추가하고 Docker smoke test에서 실제 샘플 저장/프로필 통계 갱신까지 빠르게 확인
+- `style_agent`에 `deterministic_voice` 옵션을 추가하고 Docker smoke test가 학습된 voice profile을 문체 적용 단계까지 넘겨 확인하도록 확장
+- `VOICE_BLOG_IMPORT_FIXTURE_MAP`과 네이버 블로그 fixture HTML을 추가해 Docker smoke test가 외부 네트워크 없이 URL 본문 추출/학습까지 검증
 
 ## 2026-05-05
 
@@ -148,3 +154,13 @@
 - `qwen2.5:14b` 기반 LLM 보정은 아직 느린 편
 - `gemma4`는 설치 완료 후 비교 실험 예정
 - 그룹화 규칙은 더 전략별로 분리할 여지가 있음
+
+## 2026-05-17
+
+### 초대 코드 회원가입
+
+- Spring 오케스트레이터에 `POST /api/v1/auth/register` 추가
+- `MOMENTLY_SIGNUP_INVITE_CODE`가 비어 있으면 회원가입을 비활성화하고, 설정된 경우 초대 코드 검증 후 BCrypt 해시로 사용자 계정 저장
+- 기존 환경변수 콘솔 계정 로그인은 유지하되, DB 사용자 로그인도 함께 지원
+- 콘솔 로그인 화면에 로그인/회원가입 전환 UI와 초대 코드 입력 추가
+- Docker smoke test에 회원가입 후 보호 API 접근 검증 추가
