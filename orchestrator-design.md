@@ -308,10 +308,18 @@ agents:
 
 - `agents.http.connect-timeout-seconds`: FastAPI 에이전트 연결 timeout
 - `agents.http.read-timeout-seconds`: FastAPI 에이전트 응답 read timeout
-- Docker 프로필에서는 `MOMENTLY_AGENT_CONNECT_TIMEOUT_SECONDS`, `MOMENTLY_AGENT_READ_TIMEOUT_SECONDS`로 덮어쓸 수 있다.
+- `agents.http.max-attempts`: 일시 장애 재시도 포함 최대 시도 횟수
+- `agents.http.backoff-millis`: 재시도 전 대기 시간
+- Docker 프로필에서는 `MOMENTLY_AGENT_CONNECT_TIMEOUT_SECONDS`, `MOMENTLY_AGENT_READ_TIMEOUT_SECONDS`, `MOMENTLY_AGENT_MAX_ATTEMPTS`, `MOMENTLY_AGENT_BACKOFF_MILLIS`로 덮어쓸 수 있다.
+
+### artifact 보존 정책
+
+- 원본 단계 산출물은 워크플로 재시도/결과 조회를 위해 삭제하지 않는다.
+- 사용자 편집본은 원본 아티팩트 옆 `edits/` 디렉터리에 저장한다.
+- `*-latest.md`는 항상 유지하며, 타임스탬프 버전 파일은 `momently.artifacts.max-edit-versions` 개수만 보존한다.
+- Docker 프로필에서는 `MOMENTLY_ARTIFACT_MAX_EDIT_VERSIONS`로 덮어쓸 수 있다.
 
 ## 다음 작업
 
 - 브라우저 E2E로 업로드 → 완료 → 결과 수정 저장 흐름 검증
-- 운영용 artifact 보존/삭제 정책 구체화
-- 에이전트 호출 retry/backoff 표준화
+- 오래된 워크플로 원본 산출물 정리 정책 구체화
