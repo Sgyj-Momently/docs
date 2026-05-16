@@ -24,38 +24,46 @@
 - Docker compose healthcheck와 `service_healthy` 기동 조건 추가
 - 워크플로 `retry` API와 콘솔 재시도 UX 추가
 - 사용자-facing 실패 메시지에서 내부 컨테이너 경로 노출 제거
+- 실패/재시도/멱등성 시나리오를 API 레벨 테스트로 보강
 - 콘솔 결과물 서버 저장본/편집본 흐름 추가
 - 작업 기록 검색/상태 필터와 상세 재시도 추적 추가
 - 업로드 제한 조회 API와 콘솔 사전 검증 동기화
 - 로그인 유지 옵션을 명시적으로 선택하는 방식으로 조정
 - 에이전트 HTTP 호출 공통 connect/read timeout 설정 추가
+- 주요 HTTP 에이전트 호출 공통 retry/backoff 정책 추가
+- 결과물 수정본 latest 유지 + 버전 파일 보존 개수 제한 정책 추가
+- `photo_grouping_agent` 전략별 의미 태그 프로필, 의미 점수 가중치, boundary evaluator 분리
+- `photo_grouping_agent` 메타 부족 fallback에 파일명 숫자 순서 gap 분리 추가
+- `photo_grouping_agent` 모델 비교 실행 스크립트와 CLI 저장 테스트 추가
+- `photo_grouping_agent` LLM 보정 결과의 photo_id 커버리지 검증과 누락 ID 자동 복구 추가
+- 실제 `qwen2.5:14b`/`gemma4:e4b` 비교 결과 생성. 현재 두 모델 모두 전체 커버/repair 없음
+- 모델 비교 결과에 `quality_summary`를 추가해 커버리지, repair 수, 그룹 수 차이를 요약
+- 모델 비교 결과에 `recommended_model`을 추가. 현재 두 샘플의 추천 모델이 갈리므로 추가 샘플 평가 필요
+- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트 추가. 현재 2개 샘플 집계 기준 `gemma4:e4b` 추천
+- 예제 입력 묶음 전체를 비교하고 리포트까지 갱신하는 `compare-sample-suite.sh` 추가
+- 비교 CLI는 입력 JSON의 `grouping_strategy`를 기본값으로 사용하도록 수정. 현재 2개 샘플 suite 기준 `qwen2.5:14b` 추천
+- suite 샘플 manifest(`examples/model_comparison_samples.json`)와 Ollama `temperature: 0` 비교 옵션 추가
 
 ## 진행 중
 
-- 그룹화 규칙 정교화
-- 전략별 점수 모델 분리
-- `qwen2.5` / `gemma4` 비교 실험 준비
+- 실제 사용자 샘플을 더 확보해 모델 비교 리포트 신뢰도 높이기
 
 ## 다음 우선순위
 
 ### 1. Spring 오케스트레이터 설계
 
 - Testcontainers가 Docker Desktop 29 소켓을 안정적으로 잡도록 CI/로컬 실행 환경 정리
-- 실패/재시도 시나리오를 API 레벨에서도 보강
 - 운영용 schema migration 전략 결정
-- 에이전트 호출 retry/backoff 정책 표준화
 
 ### 2. photo_grouping_agent 고도화
 
-- 전략별 규칙을 분리된 프로필 구조로 리팩터링
-- gemma4 비교 실험
-- 메타 부족 그룹 fallback 개선
+- 추가 샘플 기반 그룹화 품질 튜닝
 
 ### 3. 운영 정리
 
 - 에이전트별 헬스 체크 및 장애 메시지 표준화
 - SSE 연결/재연결 동작을 브라우저 E2E로 검증
-- 결과물 서버 저장본의 보존/삭제 정책 결정
+- 오래된 워크플로 원본 산출물 정리 정책 결정
 - 다른 PC/CI 환경에서도 동일하게 실행 가능한 Docker/Testcontainers 설정 정리
 
 ## 이후 단계

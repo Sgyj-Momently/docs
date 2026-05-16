@@ -12,8 +12,22 @@
 - 업로드 UX에서 용량/개수/형식/중복 파일 제외 사유를 사용자에게 표시
 - 로그인 토큰은 기본적으로 sessionStorage에만 저장하고, 사용자가 선택할 때만 localStorage에 유지하도록 변경
 - 작업 기록 목록/상세에서 워크플로 메타데이터 한 건만 삭제하는 API와 콘솔 액션 추가
-- 에이전트 HTTP 호출 공통 connect/read timeout 설정과 Docker 환경변수 추가
+- 완료된 워크플로의 `run` 재요청과 실패 워크플로의 `run`/`retry` 재진입을 API 테스트로 고정
+- `photo_grouping_agent`의 전략별 의미 태그 필터와 의미 점수 가중치를 `strategy_profiles.py`로, boundary 판단을 `boundary_evaluators.py`로 분리하고 단위 테스트 추가
+- 메타데이터가 부족한 사진은 파일명 숫자 순서가 크게 끊기는 경우에만 `filename_sequence_gap`으로 보수적으로 분리
+- `photo_grouping_agent/scripts/compare-models.sh`를 추가하고 CLI 모델 비교 결과 저장 테스트를 보강
+- 실제 `qwen2.5:14b`/`gemma4:e4b` 비교 결과를 생성하고, LLM이 일부 photo_id를 누락하는 경우 규칙 기반 그룹 조각으로 `coverage_repair`를 붙이도록 후처리 추가
+- 프롬프트에 required photo_id 전체 커버 규칙을 추가한 뒤 `gemma4:e4b`는 전체 커버, `qwen2.5:14b`는 누락 2장을 자동 복구하는 결과를 확인
+- 모델 비교 결과에 `quality_summary`를 추가하고, 재실행 기준 두 모델 모두 전체 커버/repair 없음/4개 그룹 결과를 확인
+- 모델 비교 결과에 `recommended_model`을 추가하고 두 샘플 비교 결과를 저장. 샘플별 추천 모델이 갈려 추가 평가가 필요함을 확인
+- LLM이 중첩 `groups` 같은 계약 외 필드를 반환해도 group 객체에서 허용 필드만 남기도록 schema repair 추가
+- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트를 추가하고 현재 2개 샘플 기준 `gemma4:e4b` 추천 리포트 생성
+- `compare-models.sh`가 입력 JSON의 `grouping_strategy`를 기본값으로 사용하도록 수정하고, 예제 입력 묶음 전체 비교/리포트 갱신용 `compare-sample-suite.sh` 추가
+- suite 재실행 기준 현재 2개 샘플 집계 추천 모델은 `qwen2.5:14b`
+- suite 샘플 manifest(`examples/model_comparison_samples.json`)를 추가하고 Ollama 비교 호출을 `temperature: 0`으로 고정
+- 에이전트 HTTP 호출 공통 connect/read timeout, retry/backoff 설정과 Docker 환경변수 추가
 - HTTP 에이전트 `/health` 응답에 `service` 필드를 표준화하고 core 검증 범위를 확대
+- 결과물 수정본 latest 유지와 타임스탬프 버전 파일 보존 개수 제한 정책 추가
 - `draft_agent` 테스트가 실제 Ollama를 호출하지 않게 고정해 검증 시간을 39초대에서 밀리초 단위로 단축
 - `spring_orchestrator`, `momently_console`, `draft_agent`, `photo_exif_llm_pipeline` 검증 통과 확인
 
