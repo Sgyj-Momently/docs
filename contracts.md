@@ -92,6 +92,9 @@
 
 - **입력(오케스트레이터 → outline_agent) 최소 필드**
   - `project_id` (string)
+  - `content_type` (string | null) — 사용자가 선택한 글 종류(사용자 의도)
+  - `writing_instructions` (string | null) — 사용자가 입력한 작성 방향(사용자 의도)
+  - `target_keywords` (string | null) — 검색 최적화 대상 키워드(쉼표 구분 자연어). 같은 필드가 draft/review에도 전달됨
   - `groups` (array)
     - `group_id` (string)
     - `photo_ids` (string[])
