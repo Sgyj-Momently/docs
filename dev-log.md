@@ -27,6 +27,9 @@
 - suite 샘플 manifest(`examples/model_comparison_samples.json`)를 추가하고 Ollama 비교 호출을 `temperature: 0`으로 고정
 - 모델 비교 리포트에 전략별 커버리지와 `confidence_level`을 추가해 현재 suite가 샘플 수/전략 다양성 기준으로 낮은 신뢰도임을 표시
 - 콘솔 글쓰기 화면의 SSE 실패 시 폴링 fallback 전환을 `workflowLiveUpdates.js` 유틸로 분리하고 Vitest로 고정
+- 실제 글쓰기 체감 속도를 줄이기 위해 Docker 기본 draft/style/review 모델을 `qwen2.5:14b`로 맞추고 review LLM 교정은 기본 OFF로 전환
+- 준비 단계 체감 시간을 줄이기 위해 Docker 기본 비디오 분석 프레임 수를 1로 낮추고, Spring 워크플로 단계별 `workflow_step_timing` 로그 추가
+- 말투 학습 샘플에서 네이버 이미지/추적 URL/지도 UI 잡음이 어미·단어로 학습되지 않게 정제하고, 퀴즈 OCR 입력은 앱테크 정답 공유 글 구조로 outline/draft를 유도
 - 에이전트 HTTP 호출 공통 connect/read timeout, retry/backoff 설정과 Docker 환경변수 추가
 - HTTP 에이전트 `/health` 응답에 `service` 필드를 표준화하고 core 검증 범위를 확대
 - 결과물 수정본 latest 유지와 타임스탬프 버전 파일 보존 개수 제한 정책 추가
