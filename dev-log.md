@@ -177,3 +177,12 @@
 - PostgreSQL 프로필에 Flyway baseline migration을 추가하고 Hibernate 기본 schema 모드를 `validate`로 전환
 - Docker Desktop 29 환경에서 Testcontainers가 Docker Engine API와 협상하도록 테스트 리소스에 `docker-java.properties`를 추가
 - Docker smoke test에 초대 코드 발행, 목록 조회, 폐기, 회원가입, 보호 API 접근, 현재 계정 조회, 비밀번호 변경 후 재로그인, 사용자 비활성화/활성화, 기존 JWT 무효화 검증 추가
+
+### 글 구조 결정권을 사용자 의도로 이전 + 검색 최적화 모드
+
+- 문제: 글의 장르·구조를 정하는 outline 단계가 사용자 의도(`content_type`/`writing_instructions`)를 전달받지 못해, 사진 OCR 키워드 하드코딩이 사실상 단독으로 구조를 결정. 일반 후기를 요청해도 사진에 `포인트` 등 흔한 단어 하나만 섞이면 `퀴즈 정답 공유` 글로 납치됨
+- `OutlineAgentPort`에 사용자 의도 포함 오버로드(default 메서드, `DraftAgentPort` 패턴과 동일)를 추가하고 `OutlineAgentClient`가 `content_type`/`writing_instructions`를 outline 요청 payload에 포함. `WorkflowRunner`가 `Workflow`의 의도를 outline 단계로 전달
+- `outline_agent`/`draft_agent`: 사용자 의도가 있으면 그것이 장르·구조를 최우선 결정하고, 사진/OCR은 재료로만 사용. 퀴즈 정답 공유 구조와 퀴즈형 제목 fallback은 사용자 의도가 비어 있을 때만 동작하도록 강등. 오탐 잦던 `포인트`를 퀴즈 트리거 키워드에서 제거
+- 검색 최적화 모드 추가: 별도 계약 필드 없이 `content_type`/`writing_instructions` 자연어의 "검색/SEO/키워드/노출/상위/최적화" 신호로 활성화. "구글/티스토리"면 구글 SEO, 그 외는 네이버 SEO(기본값)로 자동 분기. 제목·첫 문단·소제목에 검색어 자연 반영, 이미지 alt 텍스트 키워드 연결, 키워드 스터핑 금지, 사실 범위 유지 가드
+- DB schema 변경 없이 기존 의도 전달 통로만 확장(Flyway migration 불필요). 콘솔 구조화 키워드 입력 UI는 후속 과제로 남김
+- 검증: `outline_agent` 11, `draft_agent` 14 단위 테스트 통과. `spring_orchestrator` `gradle test jacocoTestReport jacocoTestCoverageVerification` BUILD SUCCESSFUL(커버리지 검증 포함)
