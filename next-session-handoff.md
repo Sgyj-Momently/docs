@@ -176,17 +176,15 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 
 ### 1. spring_orchestrator
 
-- Testcontainers가 Docker Desktop 29 소켓을 안정적으로 잡도록 CI/로컬 실행 환경 정리
-- 운영 schema migration 전략 결정
-- 회원가입 계정 관리 UX(비밀번호 변경/초대 코드 회전/사용자 비활성화) 범위 결정
+- Flyway migration을 신규 schema 변경 때마다 추가하고, 운영 배포 전 `SPRING_JPA_HIBERNATE_DDL_AUTO=validate` 검증 유지
 
 ### 2. photo_grouping_agent
 
-- 실제 사용자 샘플을 추가해 `model_comparison_report` 신뢰도 높이기
+- 실제 사용자 샘플을 최소 5개, 전략은 3종 이상으로 추가해 `model_comparison_report` confidence를 높이기
 
 ### 3. 운영/UX 검증
 
-- SSE 재연결/폴링 fallback을 브라우저 E2E로 검증
+- SSE 재연결/폴링 fallback의 브라우저 E2E 검증 추가
 - 에이전트별 헬스 체크와 장애 메시지 표준화
 
 ## 작업 시작 체크리스트
