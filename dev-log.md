@@ -21,10 +21,15 @@
 - 모델 비교 결과에 `quality_summary`를 추가하고, 재실행 기준 두 모델 모두 전체 커버/repair 없음/4개 그룹 결과를 확인
 - 모델 비교 결과에 `recommended_model`을 추가하고 두 샘플 비교 결과를 저장. 샘플별 추천 모델이 갈려 추가 평가가 필요함을 확인
 - LLM이 중첩 `groups` 같은 계약 외 필드를 반환해도 group 객체에서 허용 필드만 남기도록 schema repair 추가
-- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트를 추가하고 현재 2개 샘플 기준 `gemma4:e4b` 추천 리포트 생성
+- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트를 추가하고 현재 2개 샘플 기준 `qwen2.5:14b` 추천 리포트 생성
 - `compare-models.sh`가 입력 JSON의 `grouping_strategy`를 기본값으로 사용하도록 수정하고, 예제 입력 묶음 전체 비교/리포트 갱신용 `compare-sample-suite.sh` 추가
 - suite 재실행 기준 현재 2개 샘플 집계 추천 모델은 `qwen2.5:14b`
 - suite 샘플 manifest(`examples/model_comparison_samples.json`)를 추가하고 Ollama 비교 호출을 `temperature: 0`으로 고정
+- 모델 비교 리포트에 전략별 커버리지와 `confidence_level`을 추가해 현재 suite가 샘플 수/전략 다양성 기준으로 낮은 신뢰도임을 표시
+- 콘솔 글쓰기 화면의 SSE 실패 시 폴링 fallback 전환을 `workflowLiveUpdates.js` 유틸로 분리하고 Vitest로 고정
+- 실제 글쓰기 체감 속도를 줄이기 위해 Docker 기본 draft/style/review 모델을 `qwen2.5:14b`로 맞추고 review LLM 교정은 기본 OFF로 전환
+- 준비 단계 체감 시간을 줄이기 위해 Docker 기본 비디오 분석 프레임 수를 1로 낮추고, Spring 워크플로 단계별 `workflow_step_timing` 로그 추가
+- 말투 학습 샘플에서 네이버 이미지/추적 URL/지도 UI 잡음이 어미·단어로 학습되지 않게 정제하고, 퀴즈 OCR 입력은 앱테크 정답 공유 글 구조로 outline/draft를 유도
 - 에이전트 HTTP 호출 공통 connect/read timeout, retry/backoff 설정과 Docker 환경변수 추가
 - HTTP 에이전트 `/health` 응답에 `service` 필드를 표준화하고 core 검증 범위를 확대
 - 결과물 수정본 latest 유지와 타임스탬프 버전 파일 보존 개수 제한 정책 추가
@@ -160,7 +165,34 @@
 ### 초대 코드 회원가입
 
 - Spring 오케스트레이터에 `POST /api/v1/auth/register` 추가
-- `MOMENTLY_SIGNUP_INVITE_CODE`가 비어 있으면 회원가입을 비활성화하고, 설정된 경우 초대 코드 검증 후 BCrypt 해시로 사용자 계정 저장
+- 로그인한 사용자가 `POST /api/v1/auth/invites`로 1회용 초대 코드를 먼저 발행하고, 회원가입은 발행된 코드 검증 후 BCrypt 해시로 사용자 계정 저장
+- `MOMENTLY_SIGNUP_INVITE_CODE`는 초기 부트스트랩 fallback으로 유지하되 기본값은 비움
 - 기존 환경변수 콘솔 계정 로그인은 유지하되, DB 사용자 로그인도 함께 지원
 - 콘솔 로그인 화면에 로그인/회원가입 전환 UI와 초대 코드 입력 추가
-- Docker smoke test에 회원가입 후 보호 API 접근 검증 추가
+- 콘솔에 `초대 코드` 메뉴를 추가해 로그인한 사용자가 코드를 발행·복사할 수 있도록 함
+- 초대 코드 최근 목록 조회와 사용 전 폐기 기능 추가
+- 계정 메뉴와 `/api/v1/auth/me`, `/api/v1/auth/password`를 추가해 DB 가입 사용자의 비밀번호 변경 지원
+- 관리자 사용자 목록과 가입 사용자 활성/비활성 기능 추가. 비활성화 사용자는 새 로그인이 차단됨
+- DB 가입 사용자 JWT에 토큰 버전을 넣어 비밀번호 변경, 비활성화, 재활성화 시 기존 토큰을 즉시 무효화
+- PostgreSQL 프로필에 Flyway baseline migration을 추가하고 Hibernate 기본 schema 모드를 `validate`로 전환
+- Docker Desktop 29 환경에서 Testcontainers가 Docker Engine API와 협상하도록 테스트 리소스에 `docker-java.properties`를 추가
+- Docker smoke test에 초대 코드 발행, 목록 조회, 폐기, 회원가입, 보호 API 접근, 현재 계정 조회, 비밀번호 변경 후 재로그인, 사용자 비활성화/활성화, 기존 JWT 무효화 검증 추가
+
+### 글 구조 결정권을 사용자 의도로 이전 + 검색 최적화 모드
+
+- 문제: 글의 장르·구조를 정하는 outline 단계가 사용자 의도(`content_type`/`writing_instructions`)를 전달받지 못해, 사진 OCR 키워드 하드코딩이 사실상 단독으로 구조를 결정. 일반 후기를 요청해도 사진에 `포인트` 등 흔한 단어 하나만 섞이면 `퀴즈 정답 공유` 글로 납치됨
+- `OutlineAgentPort`에 사용자 의도 포함 오버로드(default 메서드, `DraftAgentPort` 패턴과 동일)를 추가하고 `OutlineAgentClient`가 `content_type`/`writing_instructions`를 outline 요청 payload에 포함. `WorkflowRunner`가 `Workflow`의 의도를 outline 단계로 전달
+- `outline_agent`/`draft_agent`: 사용자 의도가 있으면 그것이 장르·구조를 최우선 결정하고, 사진/OCR은 재료로만 사용. 퀴즈 정답 공유 구조와 퀴즈형 제목 fallback은 사용자 의도가 비어 있을 때만 동작하도록 강등. 오탐 잦던 `포인트`를 퀴즈 트리거 키워드에서 제거
+- 검색 최적화 모드 추가: 별도 계약 필드 없이 `content_type`/`writing_instructions` 자연어의 "검색/SEO/키워드/노출/상위/최적화" 신호로 활성화. "구글/티스토리"면 구글 SEO, 그 외는 네이버 SEO(기본값)로 자동 분기. 제목·첫 문단·소제목에 검색어 자연 반영, 이미지 alt 텍스트 키워드 연결, 키워드 스터핑 금지, 사실 범위 유지 가드
+- DB schema 변경 없이 기존 의도 전달 통로만 확장(Flyway migration 불필요). 콘솔 구조화 키워드 입력 UI는 후속 과제로 남김
+- 검증: `outline_agent` 11, `draft_agent` 14 단위 테스트 통과. `spring_orchestrator` `gradle test jacocoTestReport jacocoTestCoverageVerification` BUILD SUCCESSFUL(커버리지 검증 포함)
+
+### 검색 키워드 정형 입력 end-to-end + review_agent 검수
+
+- 콘솔 글쓰기 화면에 `검색 키워드` 입력 추가 → `CreateWorkflowRequest.targetKeywords`로 전송
+- `targetKeywords`를 도메인 `Workflow`(신규 9-arg 위임 생성자로 기존 77개 호출부 무변경)·`WorkflowJpaEntity`·Flyway `V2__add_target_keywords.sql`(`ALTER TABLE workflows ADD COLUMN IF NOT EXISTS target_keywords text`)까지 영속화. `ddl-auto=validate` 유지
+- `CreateWorkflowCommand`/`CreateWorkflowRequest`는 7번째 컴포넌트 추가 + 하위 arity 편의 생성자로 기존 호출부 호환
+- `OutlineAgentPort`/`DraftAgentPort`/`ReviewAgentPort`에 키워드 포함 default 오버로드 추가(기존 stub·호출부 무변경 위임). `WorkflowRunner`가 outline/draft/review로 `getTargetKeywords()` 전달
+- `outline_agent`/`draft_agent`: `target_keywords`만 있어도 사용자 의도로 간주(퀴즈 fallback off)하고 프롬프트에 `주력 검색어` 라인 주입
+- `review_agent`: `target_keywords`가 있을 때 `seo_title_contains_keyword`/`seo_keyword_in_body`/`seo_no_keyword_stuffing` 검사. 스터핑은 동일 검색어 4회+ 이고 본문 토큰 비중 >15%일 때만 fail(짧은 정상 글 오탐 방지). 키워드 미지정 시 검사 생략
+- 검증: `outline_agent` 12, `draft_agent` 15, `review_agent` 10 단위 테스트 통과. `spring_orchestrator` `gradle test jacocoTestReport jacocoTestCoverageVerification` BUILD SUCCESSFUL(커버리지 검증 포함)

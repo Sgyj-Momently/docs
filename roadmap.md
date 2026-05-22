@@ -39,10 +39,11 @@
 - 실제 `qwen2.5:14b`/`gemma4:e4b` 비교 결과 생성. 현재 두 모델 모두 전체 커버/repair 없음
 - 모델 비교 결과에 `quality_summary`를 추가해 커버리지, repair 수, 그룹 수 차이를 요약
 - 모델 비교 결과에 `recommended_model`을 추가. 현재 두 샘플의 추천 모델이 갈리므로 추가 샘플 평가 필요
-- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트 추가. 현재 2개 샘플 집계 기준 `gemma4:e4b` 추천
+- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트 추가. 현재 2개 샘플 집계 기준 `qwen2.5:14b` 추천
 - 예제 입력 묶음 전체를 비교하고 리포트까지 갱신하는 `compare-sample-suite.sh` 추가
 - 비교 CLI는 입력 JSON의 `grouping_strategy`를 기본값으로 사용하도록 수정. 현재 2개 샘플 suite 기준 `qwen2.5:14b` 추천
 - suite 샘플 manifest(`examples/model_comparison_samples.json`)와 Ollama `temperature: 0` 비교 옵션 추가
+- 모델 비교 리포트에 전략별 커버리지와 `confidence_level`을 추가해 샘플 수/전략 편향 경고를 표시
 
 ## 진행 중
 
@@ -83,6 +84,28 @@
 ### review_agent
 
 - 초안 검수 및 최종 정리
+
+### meta_agent (1차 완료)
+
+- 리뷰 직후 네이버 SEO 메타데이터(제목 후보 3개·해시태그·메타
+  디스크립션·추천 카테고리·C-Rank 신호) 생성
+- 콘솔에서 후보 선택 후 "발행 패키지 복사"로 네이버 에디터에
+  바로 붙여넣기
+
+### MetaAgent 후속 로드맵 (Layer 6 이후, 별도 세션)
+
+1. **KeywordResearchAgent** — 글쓰기 전 네이버 검색광고 keywordstool API
+   로 월간 조회수·경쟁도 조회. API 키 발급 전엔 Google Trends(`pytrends`)
+   + LLM 추론 fallback
+2. **블로그 발행 어댑터** — 1순위 티스토리/워드프레스 공식 API 자동
+   발행. 네이버는 발행 패키지 다운로드 유지. 예약 발행 큐 + 발행
+   일관성 지표(주당 빈도)
+3. **유입 분석 피드백 루프** — 네이버 서치어드바이저 CSV 업로드 /
+   GA 연동으로 어떤 키워드가 실제 유입을 가져왔는지 학습해 다음 글
+   `targetKeywords` 추천에 가중치로 사용
+4. **본문 구조 강화** — outline_agent 가 H2/H3 헤딩 밀도를 C-Rank
+   권장 수준(1000자당 H2 1개 이상)으로 맞추도록 프롬프트 보강 +
+   ReviewAgent 글자수·이미지수·헤딩수 임계 검사 추가
 
 ## 운영 정리 예정
 

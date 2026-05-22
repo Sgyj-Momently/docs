@@ -4,6 +4,27 @@
 
 이 문서는 다른 PC나 다른 세션에서 바로 다음 작업을 이어갈 수 있도록 현재 상태와 시작 순서를 요약한다.
 
+## 발행 패키지 포맷 (네이버 에디터 붙여넣기용)
+
+콘솔의 `MetaSelectionCard` "발행 패키지 복사" 버튼이 만드는 클립보드
+문자열의 정형 포맷. `momently_console/src/publicationPackage.js` 의
+`buildPublicationPackage` 가 생성한다.
+
+```
+{선택된 제목 한 줄}
+
+> {편집된 메타 디스크립션 (없으면 인용 블록 생략)}
+
+{본문 마크다운 (선두 H1 은 제거 — 제목으로 대체됨)}
+
+#태그1 #태그2 #태그3
+```
+
+- 해시태그는 `#` 접두 자동 부여, 중복·내부 공백 제거.
+- 본문 안에 `# 제목` 형태의 H1 이 있으면 1회 제거(사용자가 고른 제목과 중복 방지).
+- 끝에 줄바꿈 한 번을 강제(에디터 호환).
+- 메타 디스크립션은 인용(`> ...`) 블록으로 노출해 시각 구분.
+
 ## 먼저 읽을 문서
 
 1. [Agent.md](../Agent.md)
@@ -44,6 +65,7 @@
 - `compare-models.sh`는 입력 JSON의 `grouping_strategy`를 기본값으로 사용하고, 없으면 `LOCATION_BASED`를 사용
 - Ollama 비교 호출은 재현성을 위해 `temperature: 0`으로 실행
 - 현재 2개 샘플 suite 집계 기준 추천 모델은 `qwen2.5:14b`
+- `model_comparison_report`는 전략별 커버리지와 `confidence_level`을 표시한다. 현재 suite는 샘플 수와 전략 다양성이 부족해 `low` confidence 경고가 뜸
 
 ### spring_orchestrator
 
@@ -55,6 +77,7 @@
 - `local-photo-info` 실행 시 동영상 프레임 샘플링 옵션을 CLI로 전달
 - Docker compose 환경에서 업로드된 MP4 동영상 워크플로가 `COMPLETED`까지 도달함을 확인
 - 워크플로 실행/문체 재적용 진행 상태는 SSE 우선, 폴링 fallback 방식으로 갱신
+- 글쓰기 화면의 SSE 실패 -> 폴링 fallback 전환은 `workflowLiveUpdates.js` 순수 유틸과 Vitest로 고정
 - FAILED 재실행 시 정상 단계로 재진입하면 실패 메타데이터를 지움
 - `POST /api/v1/workflows/{workflowId}/retry`로 명시 재시도 가능
 - `run`/`retry` 중복 요청은 멱등 응답으로 처리
@@ -78,7 +101,13 @@
 - 로그인 토큰은 기본 세션 저장이며, 사용자가 선택할 때만 브라우저 유지
 - 말투 학습 화면에서 공개 네이버 블로그 URL을 넣으면 `voice_profile_agent`가 본문을 추출해 샘플로 학습 가능
 - 로컬 확인은 `./scripts/docker-up.sh`로 Docker compose 이미지를 rebuild/up한 뒤 콘솔 정적 앱, 로그인, 인증 API, 말투 프로필/URL 학습 라우트 smoke test까지 돌리는 흐름을 표준으로 사용
-- 회원가입은 `MOMENTLY_SIGNUP_INVITE_CODE`가 설정된 경우에만 활성화되는 초대 코드 방식으로 구현. Docker 확인 스크립트는 가입 후 발급 토큰으로 보호 API 접근까지 검증
+- PostgreSQL 프로필은 Flyway `V1__baseline_schema.sql`을 적용한 뒤 Hibernate `ddl-auto=validate`로 schema를 검증함. 기존 테이블이 있는 DB도 baseline version `0`으로 Flyway 이력을 붙인 뒤 V1 migration을 실행하도록 설정
+- Testcontainers PostgreSQL 통합 테스트는 Docker Desktop 29 계열에서 Docker API 협상을 위해 `src/test/resources/docker-java.properties`의 `api.version=1.44`를 사용
+- 회원가입은 로그인한 사용자가 콘솔 `초대 코드` 메뉴 또는 `POST /api/v1/auth/invites`로 1회용 코드를 먼저 발행한 뒤 진행하는 방식. `MOMENTLY_SIGNUP_INVITE_CODE`는 초기 부트스트랩 fallback으로만 유지
+- 초대 코드 화면은 최근 발행 이력, 상태(`ACTIVE`, `USED`, `EXPIRED`, `REVOKED`), 사용 전 폐기를 지원
+- 계정 화면은 현재 로그인 계정 출처를 보여주고, 초대 코드로 가입한 DB 계정의 비밀번호 변경을 지원. 초기 환경변수 콘솔 계정은 API 변경 불가
+- 계정 화면은 관리자 기준 사용자 목록과 가입 사용자 활성/비활성 전환을 지원. 비활성화 사용자는 새 로그인이 차단되고, 비밀번호 변경/비활성화/재활성화 시 기존 JWT도 토큰 버전으로 즉시 무효화됨
+- Docker 확인 스크립트는 로그인 토큰으로 초대 코드 발행/목록/폐기를 확인한 뒤, 별도 코드로 회원가입하고 보호 API 접근·현재 계정 조회·비밀번호 변경 후 재로그인·사용자 비활성화/활성화·기존 JWT 무효화까지 검증
 - Docker smoke test는 말투 샘플 빠른 학습 결과를 style agent의 `deterministic_voice` 적용까지 넘겨 실제 문체 적용 경로도 확인
 - Docker smoke test는 `VOICE_BLOG_IMPORT_FIXTURE_MAP` 기본값으로 fixture 기반 네이버 블로그 URL 본문 추출/학습도 확인
 
@@ -94,6 +123,24 @@
 
 - `deterministic_voice: true`를 요청에 넣으면 Ollama 재작성 없이 저장된 voice profile 특징으로 빠른 문체 적용을 수행
 - 이 옵션은 Docker smoke test와 빠른 로컬 확인용이며 기본 글쓰기 흐름은 기존처럼 LLM 재작성 우선
+
+### writing latency
+
+- Docker 기본 글쓰기 tail 모델은 로컬 응답성을 우선해 `DRAFT_MODEL=qwen2.5:14b`, `STYLE_MODEL=qwen2.5:14b`, `REVIEW_MODEL=qwen2.5:14b`
+- `review_agent`의 최종 LLM 교정은 `REVIEW_ENABLE_LLM_POLISH=false`가 기본이다. 고품질 최종 교정을 원할 때만 `true`로 켠다
+- Docker 기본 비디오 분석은 빠른 초안 확인을 위해 `PHOTO_PIPELINE_VIDEO_FRAME_COUNT=1`로 둔다. 동영상 맥락 품질을 우선하면 `3` 이상으로 올린다
+- `WorkflowRunner`는 각 단계별 `workflow_step_timing` 로그를 남겨 photo_info/draft/style/review 중 어디가 느린지 바로 확인할 수 있다
+- 더 느려도 품질을 우선할 때는 `deploy/.env`에서 draft/style/review 모델을 `qwen2.5:32b`로 올릴 수 있다
+
+### writing quality
+
+- 말투 학습은 네이버 블로그 HTML/마크다운 샘플에 섞인 이미지 URL, 추적 URL, 지도/공유 UI 텍스트를 제거한 뒤 통계와 프롬프트를 만든다
+- 글의 장르·구조는 `content_type`/`writing_instructions`(사용자 의도)가 최우선으로 결정한다. 사용자 의도는 outline 단계까지 전달된다(`OutlineAgentPort`/`OutlineAgentClient`/`WorkflowRunner`). 사진/OCR은 개요를 채우는 재료로만 쓴다
+- 퀴즈/문제/힌트/정답/젤리/앱테크 OCR 기반 `퀴즈 정답 공유` 구조는 사용자 의도가 비어 있을 때만 적용되는 fallback이다. 오탐이 잦던 `포인트`는 트리거에서 제거함
+- outline title이 비어도, 사용자 의도가 없을 때만 draft가 OCR 서비스명과 촬영일로 `[5월 15일] 모니스쿨 퀴즈 정답 공개｜오늘의 앱테크 퀴즈 정리` 같은 제목 fallback을 만든다. 사용자 의도가 있으면 이 fallback은 동작하지 않는다
+- 검색 최적화는 (1) 콘솔의 `검색 키워드` 입력 → `targetKeywords`(영속, Flyway `V2__add_target_keywords.sql`)로 정형 전달, 또는 (2) `writing_instructions`/`content_type` 자연어의 "검색/SEO/키워드/노출/상위/최적화" 신호로 켜진다. "구글/티스토리"는 구글 SEO, 그 외는 네이버 SEO(기본값) 자동 분기. `target_keywords`가 있으면 그 자체로 사용자 의도로 간주(퀴즈 fallback off). 키워드 스터핑 금지
+- `target_keywords`는 outline/draft 프롬프트에 주력 검색어로 주입되고, review_agent가 `seo_title_contains_keyword`/`seo_keyword_in_body`/`seo_no_keyword_stuffing`로 제목·본문 반영과 과다 반복(동일 검색어 4회+ 이고 본문 비중 >15%)을 issue로 검수한다. 키워드 미지정 시 SEO 검사 생략
+- 문제 케이스 `u_74d258e5e27f4c60a78e86c9edb003b3`는 기존 사진 분석 결과를 재사용해 outline/draft/style/review 아티팩트를 다시 생성했다(사용자 의도 미전달 시절 사례)
 
 ## 스프링 표준 검증 명령
 
@@ -129,17 +176,15 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 
 ### 1. spring_orchestrator
 
-- Testcontainers가 Docker Desktop 29 소켓을 안정적으로 잡도록 CI/로컬 실행 환경 정리
-- 운영 schema migration 전략 결정
-- 회원가입 계정 관리 UX(비밀번호 변경/초대 코드 회전/사용자 비활성화) 범위 결정
+- Flyway migration을 신규 schema 변경 때마다 추가하고, 운영 배포 전 `SPRING_JPA_HIBERNATE_DDL_AUTO=validate` 검증 유지
 
 ### 2. photo_grouping_agent
 
-- 실제 사용자 샘플을 추가해 `model_comparison_report` 신뢰도 높이기
+- 실제 사용자 샘플을 최소 5개, 전략은 3종 이상으로 추가해 `model_comparison_report` confidence를 높이기
 
 ### 3. 운영/UX 검증
 
-- SSE 재연결/폴링 fallback을 브라우저 E2E로 검증
+- SSE 재연결/폴링 fallback의 브라우저 E2E 검증 추가
 - 에이전트별 헬스 체크와 장애 메시지 표준화
 
 ## 작업 시작 체크리스트
