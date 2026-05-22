@@ -130,6 +130,39 @@
   - `target_keywords`는 `CreateWorkflowRequest.targetKeywords` → `Workflow`(영속, Flyway `V2__add_target_keywords.sql`) → outline/draft/review로 전달된다.
   - review_agent는 `target_keywords`가 있을 때 `seo_title_contains_keyword`, `seo_keyword_in_body`, `seo_no_keyword_stuffing`를 검사해 미반영/과다 반복을 issue로 보고한다(키워드 미지정 시 검사 생략).
 
+### E. Meta(네이버 SEO 메타데이터 생성) 요청/응답
+
+리뷰가 끝난 final markdown 을 받아 검색 노출용 메타데이터를 생성한다.
+
+- **입력(오케스트레이터 → meta_agent) 최소 필드**
+  - `project_id` (string)
+  - `final_markdown` (string) — review_agent 가 최종 확정한 본문 마크다운
+  - `target_keywords` (string | null) — 검색 최적화 대상 키워드(쉼표 구분 자연어)
+  - `photos` (array, optional) — bundle.json 의 사진 메타. EXIF 유무로 자체 촬영 비율을 산출하는 데 사용
+
+- **출력(meta_agent → 오케스트레이터) 최소 필드**
+  - `meta_status` (string: ok | ok_fallback | ok_no_keywords)
+  - `title_candidates` (array, length 3)
+    - `title` (string)
+    - `length` (int)
+    - `contains_primary_keyword` (boolean)
+    - `contains_any_keyword` (boolean)
+    - `intent_note` (string)
+  - `hashtags` (string[], 5~10개, `#` 제외 순수 단어)
+  - `meta_description` (string, ≤155자)
+  - `recommended_category` (string)
+  - `meta_signals` (object)
+    - `body_char_count` (int)
+    - `image_count` (int)
+    - `owned_photo_ratio` (number | null)
+    - `keyword_occurrences` (object: keyword → count)
+    - `warnings` (string[])
+
+- **규칙**
+  - meta_status 가 `ok` 계열이 아니면 오케스트레이터는 IllegalState 로 실패 처리.
+  - 키워드 스터핑(같은 검색어 4회 이상 반복) 금지.
+  - LLM 호출이 실패해도 결정론 fallback 으로 최소 후보를 생성해 반환한다.
+
 ## 4) 아티팩트 경로 규약(권장)
 
 오케스트레이터가 단계 결과를 저장할 때 “예측 가능한 경로”를 유지한다.
@@ -143,6 +176,8 @@
   - `.../<projectId>/hero-photo/hero-result.json`
 - Outline
   - `.../<projectId>/outline/outline.json`
+- Meta
+  - `.../<projectId>/meta/meta.json`
 
 > 추후 7단계 확장 시에도 동일하게 `.../<projectId>/<step>/...` 형태로 확장한다.
 
