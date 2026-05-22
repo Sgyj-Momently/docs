@@ -124,6 +124,24 @@
 - `deterministic_voice: true`를 요청에 넣으면 Ollama 재작성 없이 저장된 voice profile 특징으로 빠른 문체 적용을 수행
 - 이 옵션은 Docker smoke test와 빠른 로컬 확인용이며 기본 글쓰기 흐름은 기존처럼 LLM 재작성 우선
 
+### writing latency
+
+- Docker 기본 글쓰기 tail 모델은 로컬 응답성을 우선해 `DRAFT_MODEL=qwen2.5:14b`, `STYLE_MODEL=qwen2.5:14b`, `REVIEW_MODEL=qwen2.5:14b`
+- `review_agent`의 최종 LLM 교정은 `REVIEW_ENABLE_LLM_POLISH=false`가 기본이다. 고품질 최종 교정을 원할 때만 `true`로 켠다
+- Docker 기본 비디오 분석은 빠른 초안 확인을 위해 `PHOTO_PIPELINE_VIDEO_FRAME_COUNT=1`로 둔다. 동영상 맥락 품질을 우선하면 `3` 이상으로 올린다
+- `WorkflowRunner`는 각 단계별 `workflow_step_timing` 로그를 남겨 photo_info/draft/style/review 중 어디가 느린지 바로 확인할 수 있다
+- 더 느려도 품질을 우선할 때는 `deploy/.env`에서 draft/style/review 모델을 `qwen2.5:32b`로 올릴 수 있다
+
+### writing quality
+
+- 말투 학습은 네이버 블로그 HTML/마크다운 샘플에 섞인 이미지 URL, 추적 URL, 지도/공유 UI 텍스트를 제거한 뒤 통계와 프롬프트를 만든다
+- 글의 장르·구조는 `content_type`/`writing_instructions`(사용자 의도)가 최우선으로 결정한다. 사용자 의도는 outline 단계까지 전달된다(`OutlineAgentPort`/`OutlineAgentClient`/`WorkflowRunner`). 사진/OCR은 개요를 채우는 재료로만 쓴다
+- 퀴즈/문제/힌트/정답/젤리/앱테크 OCR 기반 `퀴즈 정답 공유` 구조는 사용자 의도가 비어 있을 때만 적용되는 fallback이다. 오탐이 잦던 `포인트`는 트리거에서 제거함
+- outline title이 비어도, 사용자 의도가 없을 때만 draft가 OCR 서비스명과 촬영일로 `[5월 15일] 모니스쿨 퀴즈 정답 공개｜오늘의 앱테크 퀴즈 정리` 같은 제목 fallback을 만든다. 사용자 의도가 있으면 이 fallback은 동작하지 않는다
+- 검색 최적화는 (1) 콘솔의 `검색 키워드` 입력 → `targetKeywords`(영속, Flyway `V2__add_target_keywords.sql`)로 정형 전달, 또는 (2) `writing_instructions`/`content_type` 자연어의 "검색/SEO/키워드/노출/상위/최적화" 신호로 켜진다. "구글/티스토리"는 구글 SEO, 그 외는 네이버 SEO(기본값) 자동 분기. `target_keywords`가 있으면 그 자체로 사용자 의도로 간주(퀴즈 fallback off). 키워드 스터핑 금지
+- `target_keywords`는 outline/draft 프롬프트에 주력 검색어로 주입되고, review_agent가 `seo_title_contains_keyword`/`seo_keyword_in_body`/`seo_no_keyword_stuffing`로 제목·본문 반영과 과다 반복(동일 검색어 4회+ 이고 본문 비중 >15%)을 issue로 검수한다. 키워드 미지정 시 SEO 검사 생략
+- 문제 케이스 `u_74d258e5e27f4c60a78e86c9edb003b3`는 기존 사진 분석 결과를 재사용해 outline/draft/style/review 아티팩트를 다시 생성했다(사용자 의도 미전달 시절 사례)
+
 ## 스프링 표준 검증 명령
 
 핵심 모듈 전체를 한 번에 보려면:
