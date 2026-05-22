@@ -43,6 +43,7 @@
 - 예제 입력 묶음 전체를 비교하고 리포트까지 갱신하는 `compare-sample-suite.sh` 추가
 - 비교 CLI는 입력 JSON의 `grouping_strategy`를 기본값으로 사용하도록 수정. 현재 2개 샘플 suite 기준 `qwen2.5:14b` 추천
 - suite 샘플 manifest(`examples/model_comparison_samples.json`)와 Ollama `temperature: 0` 비교 옵션 추가
+- 모델 비교 리포트에 전략별 커버리지와 `confidence_level`을 추가해 샘플 수/전략 편향 경고를 표시
 
 ## 진행 중
 
