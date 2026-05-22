@@ -77,6 +77,7 @@
 - `local-photo-info` 실행 시 동영상 프레임 샘플링 옵션을 CLI로 전달
 - Docker compose 환경에서 업로드된 MP4 동영상 워크플로가 `COMPLETED`까지 도달함을 확인
 - 워크플로 실행/문체 재적용 진행 상태는 SSE 우선, 폴링 fallback 방식으로 갱신
+- 글쓰기 화면의 SSE 실패 -> 폴링 fallback 전환은 `workflowLiveUpdates.js` 순수 유틸과 Vitest로 고정
 - FAILED 재실행 시 정상 단계로 재진입하면 실패 메타데이터를 지움
 - `POST /api/v1/workflows/{workflowId}/retry`로 명시 재시도 가능
 - `run`/`retry` 중복 요청은 멱등 응답으로 처리
