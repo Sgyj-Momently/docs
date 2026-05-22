@@ -65,6 +65,7 @@
 - `compare-models.sh`는 입력 JSON의 `grouping_strategy`를 기본값으로 사용하고, 없으면 `LOCATION_BASED`를 사용
 - Ollama 비교 호출은 재현성을 위해 `temperature: 0`으로 실행
 - 현재 2개 샘플 suite 집계 기준 추천 모델은 `qwen2.5:14b`
+- `model_comparison_report`는 전략별 커버리지와 `confidence_level`을 표시한다. 현재 suite는 샘플 수와 전략 다양성이 부족해 `low` confidence 경고가 뜸
 
 ### spring_orchestrator
 
