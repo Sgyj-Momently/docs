@@ -122,6 +122,14 @@
       - `supporting_photo_ids` (string[])
     - `tone` (string | null)
 
+- **구조/장르 결정 규칙**
+  - 글의 장르·구조는 `content_type`/`writing_instructions`(사용자 의도)가 **최우선**으로 결정한다. 사진/OCR은 개요를 채우는 재료로만 쓴다.
+  - 사진 OCR의 퀴즈/정답/앱테크 키워드 기반 `퀴즈 정답 공유` 구조는 사용자 의도가 **비어 있을 때만** 적용되는 fallback이다.
+  - 검색 최적화는 두 경로로 켜진다: (1) `target_keywords`에 키워드를 명시(정형 입력), (2) `writing_instructions`/`content_type` 자연어에 "검색/SEO/키워드/노출/상위/최적화" 신호. 둘 중 하나만 있어도 outline/draft가 검색 최적화 구조를 적용하고, `target_keywords`가 있으면 그 자체로 사용자 의도로 간주해 퀴즈 fallback도 끈다.
+  - 검색 대상 플랫폼은 의도 텍스트에서 자동 판별한다: "구글/google/티스토리/tistory" → 구글 SEO, 그 외 "네이버/naver" 등 → 네이버 SEO(기본값). 키워드 스터핑은 금지한다.
+  - `target_keywords`는 `CreateWorkflowRequest.targetKeywords` → `Workflow`(영속, Flyway `V2__add_target_keywords.sql`) → outline/draft/review로 전달된다.
+  - review_agent는 `target_keywords`가 있을 때 `seo_title_contains_keyword`, `seo_keyword_in_body`, `seo_no_keyword_stuffing`를 검사해 미반영/과다 반복을 issue로 보고한다(키워드 미지정 시 검사 생략).
+
 ## 4) 아티팩트 경로 규약(권장)
 
 오케스트레이터가 단계 결과를 저장할 때 “예측 가능한 경로”를 유지한다.
