@@ -186,3 +186,13 @@
 - 검색 최적화 모드 추가: 별도 계약 필드 없이 `content_type`/`writing_instructions` 자연어의 "검색/SEO/키워드/노출/상위/최적화" 신호로 활성화. "구글/티스토리"면 구글 SEO, 그 외는 네이버 SEO(기본값)로 자동 분기. 제목·첫 문단·소제목에 검색어 자연 반영, 이미지 alt 텍스트 키워드 연결, 키워드 스터핑 금지, 사실 범위 유지 가드
 - DB schema 변경 없이 기존 의도 전달 통로만 확장(Flyway migration 불필요). 콘솔 구조화 키워드 입력 UI는 후속 과제로 남김
 - 검증: `outline_agent` 11, `draft_agent` 14 단위 테스트 통과. `spring_orchestrator` `gradle test jacocoTestReport jacocoTestCoverageVerification` BUILD SUCCESSFUL(커버리지 검증 포함)
+
+### 검색 키워드 정형 입력 end-to-end + review_agent 검수
+
+- 콘솔 글쓰기 화면에 `검색 키워드` 입력 추가 → `CreateWorkflowRequest.targetKeywords`로 전송
+- `targetKeywords`를 도메인 `Workflow`(신규 9-arg 위임 생성자로 기존 77개 호출부 무변경)·`WorkflowJpaEntity`·Flyway `V2__add_target_keywords.sql`(`ALTER TABLE workflows ADD COLUMN IF NOT EXISTS target_keywords text`)까지 영속화. `ddl-auto=validate` 유지
+- `CreateWorkflowCommand`/`CreateWorkflowRequest`는 7번째 컴포넌트 추가 + 하위 arity 편의 생성자로 기존 호출부 호환
+- `OutlineAgentPort`/`DraftAgentPort`/`ReviewAgentPort`에 키워드 포함 default 오버로드 추가(기존 stub·호출부 무변경 위임). `WorkflowRunner`가 outline/draft/review로 `getTargetKeywords()` 전달
+- `outline_agent`/`draft_agent`: `target_keywords`만 있어도 사용자 의도로 간주(퀴즈 fallback off)하고 프롬프트에 `주력 검색어` 라인 주입
+- `review_agent`: `target_keywords`가 있을 때 `seo_title_contains_keyword`/`seo_keyword_in_body`/`seo_no_keyword_stuffing` 검사. 스터핑은 동일 검색어 4회+ 이고 본문 토큰 비중 >15%일 때만 fail(짧은 정상 글 오탐 방지). 키워드 미지정 시 검사 생략
+- 검증: `outline_agent` 12, `draft_agent` 15, `review_agent` 10 단위 테스트 통과. `spring_orchestrator` `gradle test jacocoTestReport jacocoTestCoverageVerification` BUILD SUCCESSFUL(커버리지 검증 포함)
