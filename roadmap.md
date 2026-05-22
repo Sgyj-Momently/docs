@@ -39,7 +39,7 @@
 - 실제 `qwen2.5:14b`/`gemma4:e4b` 비교 결과 생성. 현재 두 모델 모두 전체 커버/repair 없음
 - 모델 비교 결과에 `quality_summary`를 추가해 커버리지, repair 수, 그룹 수 차이를 요약
 - 모델 비교 결과에 `recommended_model`을 추가. 현재 두 샘플의 추천 모델이 갈리므로 추가 샘플 평가 필요
-- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트 추가. 현재 2개 샘플 집계 기준 `gemma4:e4b` 추천
+- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트 추가. 현재 2개 샘플 집계 기준 `qwen2.5:14b` 추천
 - 예제 입력 묶음 전체를 비교하고 리포트까지 갱신하는 `compare-sample-suite.sh` 추가
 - 비교 CLI는 입력 JSON의 `grouping_strategy`를 기본값으로 사용하도록 수정. 현재 2개 샘플 suite 기준 `qwen2.5:14b` 추천
 - suite 샘플 manifest(`examples/model_comparison_samples.json`)와 Ollama `temperature: 0` 비교 옵션 추가

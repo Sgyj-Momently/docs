@@ -21,7 +21,7 @@
 - 모델 비교 결과에 `quality_summary`를 추가하고, 재실행 기준 두 모델 모두 전체 커버/repair 없음/4개 그룹 결과를 확인
 - 모델 비교 결과에 `recommended_model`을 추가하고 두 샘플 비교 결과를 저장. 샘플별 추천 모델이 갈려 추가 평가가 필요함을 확인
 - LLM이 중첩 `groups` 같은 계약 외 필드를 반환해도 group 객체에서 허용 필드만 남기도록 schema repair 추가
-- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트를 추가하고 현재 2개 샘플 기준 `gemma4:e4b` 추천 리포트 생성
+- 여러 비교 결과를 집계하는 `model_comparison_report` 스크립트를 추가하고 현재 2개 샘플 기준 `qwen2.5:14b` 추천 리포트 생성
 - `compare-models.sh`가 입력 JSON의 `grouping_strategy`를 기본값으로 사용하도록 수정하고, 예제 입력 묶음 전체 비교/리포트 갱신용 `compare-sample-suite.sh` 추가
 - suite 재실행 기준 현재 2개 샘플 집계 추천 모델은 `qwen2.5:14b`
 - suite 샘플 manifest(`examples/model_comparison_samples.json`)를 추가하고 Ollama 비교 호출을 `temperature: 0`으로 고정
