@@ -101,7 +101,13 @@
 - 로그인 토큰은 기본 세션 저장이며, 사용자가 선택할 때만 브라우저 유지
 - 말투 학습 화면에서 공개 네이버 블로그 URL을 넣으면 `voice_profile_agent`가 본문을 추출해 샘플로 학습 가능
 - 로컬 확인은 `./scripts/docker-up.sh`로 Docker compose 이미지를 rebuild/up한 뒤 콘솔 정적 앱, 로그인, 인증 API, 말투 프로필/URL 학습 라우트 smoke test까지 돌리는 흐름을 표준으로 사용
-- 회원가입은 `MOMENTLY_SIGNUP_INVITE_CODE`가 설정된 경우에만 활성화되는 초대 코드 방식으로 구현. Docker 확인 스크립트는 가입 후 발급 토큰으로 보호 API 접근까지 검증
+- PostgreSQL 프로필은 Flyway `V1__baseline_schema.sql`을 적용한 뒤 Hibernate `ddl-auto=validate`로 schema를 검증함. 기존 테이블이 있는 DB도 baseline version `0`으로 Flyway 이력을 붙인 뒤 V1 migration을 실행하도록 설정
+- Testcontainers PostgreSQL 통합 테스트는 Docker Desktop 29 계열에서 Docker API 협상을 위해 `src/test/resources/docker-java.properties`의 `api.version=1.44`를 사용
+- 회원가입은 로그인한 사용자가 콘솔 `초대 코드` 메뉴 또는 `POST /api/v1/auth/invites`로 1회용 코드를 먼저 발행한 뒤 진행하는 방식. `MOMENTLY_SIGNUP_INVITE_CODE`는 초기 부트스트랩 fallback으로만 유지
+- 초대 코드 화면은 최근 발행 이력, 상태(`ACTIVE`, `USED`, `EXPIRED`, `REVOKED`), 사용 전 폐기를 지원
+- 계정 화면은 현재 로그인 계정 출처를 보여주고, 초대 코드로 가입한 DB 계정의 비밀번호 변경을 지원. 초기 환경변수 콘솔 계정은 API 변경 불가
+- 계정 화면은 관리자 기준 사용자 목록과 가입 사용자 활성/비활성 전환을 지원. 비활성화 사용자는 새 로그인이 차단되고, 비밀번호 변경/비활성화/재활성화 시 기존 JWT도 토큰 버전으로 즉시 무효화됨
+- Docker 확인 스크립트는 로그인 토큰으로 초대 코드 발행/목록/폐기를 확인한 뒤, 별도 코드로 회원가입하고 보호 API 접근·현재 계정 조회·비밀번호 변경 후 재로그인·사용자 비활성화/활성화·기존 JWT 무효화까지 검증
 - Docker smoke test는 말투 샘플 빠른 학습 결과를 style agent의 `deterministic_voice` 적용까지 넘겨 실제 문체 적용 경로도 확인
 - Docker smoke test는 `VOICE_BLOG_IMPORT_FIXTURE_MAP` 기본값으로 fixture 기반 네이버 블로그 URL 본문 추출/학습도 확인
 
