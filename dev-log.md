@@ -165,7 +165,15 @@
 ### 초대 코드 회원가입
 
 - Spring 오케스트레이터에 `POST /api/v1/auth/register` 추가
-- `MOMENTLY_SIGNUP_INVITE_CODE`가 비어 있으면 회원가입을 비활성화하고, 설정된 경우 초대 코드 검증 후 BCrypt 해시로 사용자 계정 저장
+- 로그인한 사용자가 `POST /api/v1/auth/invites`로 1회용 초대 코드를 먼저 발행하고, 회원가입은 발행된 코드 검증 후 BCrypt 해시로 사용자 계정 저장
+- `MOMENTLY_SIGNUP_INVITE_CODE`는 초기 부트스트랩 fallback으로 유지하되 기본값은 비움
 - 기존 환경변수 콘솔 계정 로그인은 유지하되, DB 사용자 로그인도 함께 지원
 - 콘솔 로그인 화면에 로그인/회원가입 전환 UI와 초대 코드 입력 추가
-- Docker smoke test에 회원가입 후 보호 API 접근 검증 추가
+- 콘솔에 `초대 코드` 메뉴를 추가해 로그인한 사용자가 코드를 발행·복사할 수 있도록 함
+- 초대 코드 최근 목록 조회와 사용 전 폐기 기능 추가
+- 계정 메뉴와 `/api/v1/auth/me`, `/api/v1/auth/password`를 추가해 DB 가입 사용자의 비밀번호 변경 지원
+- 관리자 사용자 목록과 가입 사용자 활성/비활성 기능 추가. 비활성화 사용자는 새 로그인이 차단됨
+- DB 가입 사용자 JWT에 토큰 버전을 넣어 비밀번호 변경, 비활성화, 재활성화 시 기존 토큰을 즉시 무효화
+- PostgreSQL 프로필에 Flyway baseline migration을 추가하고 Hibernate 기본 schema 모드를 `validate`로 전환
+- Docker Desktop 29 환경에서 Testcontainers가 Docker Engine API와 협상하도록 테스트 리소스에 `docker-java.properties`를 추가
+- Docker smoke test에 초대 코드 발행, 목록 조회, 폐기, 회원가입, 보호 API 접근, 현재 계정 조회, 비밀번호 변경 후 재로그인, 사용자 비활성화/활성화, 기존 JWT 무효화 검증 추가
