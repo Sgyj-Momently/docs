@@ -1,5 +1,27 @@
 # Development Log
 
+## 2026-05-24
+
+### ADR 005 단계 2a — orchestrator 에이전트 에러 인프라
+
+- `AgentInvocationException` (errorCode / userMessage / retryable / retry_after_seconds /
+  httpStatus / traceId / details / agentName / cause) 신설. ADR 005 envelope 와 1:1 매핑
+- `AgentErrorResponse` record + `AgentErrorParser` — `error_code` 필드 존재로 표준
+  envelope vs legacy 본문 분기. legacy 는 status 기반 fallback + raw body truncate(500자)
+- `GlobalAgentExceptionHandler` (@RestControllerAdvice + @Order LOWEST_PRECEDENCE) —
+  `AgentInvocationException` 만 처리, `RestApiExceptionHandler` 와 disjoint
+- production readiness 다축 검토(security-reviewer / verifier / code-reviewer(opus) / critic)
+  결과 finding 일괄 반영:
+  - `resolveStatus` 4xx 전체 pass-through (408/410/451 fallthrough 502 회귀 차단)
+  - Retry-After 음수/0 가드 + 상한 3600초
+  - `TraceContextSanitizer` 로 traceId/errorCode CRLF 인젝션 차단 + 응답 echo 시 charset/길이 검증
+  - httpStatus 누락 시 `RestClientResponseException` cause 체인에서 회수
+  - `RestApiExceptionHandler` 와 advice 공존 통합 테스트 (`AdviceCoexistenceTest`)
+  - `WorkflowStatusCheckConstraintDriftTest` — enum-CHECK drift 빌드 가드
+  - `AgentInvocationException.agentName` — 구조화 로깅·메트릭 grouping key
+- 단계 2b(voice_profile_agent reference), 2c(StyleAgentClient + retryer 개선),
+  2d(비동기 경로 sanitization), 2e(메트릭) 가 후속 PR 로 남음. ADR 005 에 반영됨
+
 ## 2026-05-23
 
 ### voice profile MinIO 마이그레이션 read 경로 마무리
