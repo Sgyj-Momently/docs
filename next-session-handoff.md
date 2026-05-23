@@ -87,6 +87,8 @@
 - HTTP 에이전트 `/health` 응답은 `status`와 `service` 필드를 공통으로 포함함
 - 테스트 및 JaCoCo 커버리지 검증 통과
 - PostgreSQL 저장소 Testcontainers 통합 테스트가 있으며 기본 검증에서는 skip, `RUN_POSTGRES_INTEGRATION_TESTS=true`로 opt-in 실행
+- voice profile 본문은 `VoiceProfileAgentClient` 가 `GET /api/v1/internal/voice-profiles/{id}?owner=...` 로 가져온다. Style/Draft client 가 `workflow.getOwnerUsername()` 을 같이 전달해 owner-scoped 검색을 수행한다. 로컬 fs fallback 은 제거됨. `agents.voice-profile.internal-token` (env: `MOMENTLY_INTERNAL_TOKEN`) 미설정 시 client 호출 자체를 건너뛰는 fail-closed
+- Flyway V5 가 `workflows_status_check` 를 enum 전체로 재정의해 메타 단계 진입을 허용한다. `WorkflowStatus` 에 새 값을 추가할 때마다 같은 PR 에서 이 CHECK 도 갱신해야 한다
 
 ### momently_console
 
@@ -118,6 +120,7 @@
 - Ollama 말투 분석/예시 생성 호출은 `VOICE_ANALYSIS_MODEL`, `VOICE_ANALYSIS_TEMPERATURE`, `VOICE_ANALYSIS_TOP_P`로 조정 가능
 - 샘플 추가 요청에 `fast_analysis: true`를 넣으면 해당 요청은 Ollama 심층 분석 없이 로컬 통계만 갱신하므로 Docker smoke test에서 사용
 - `VOICE_BLOG_IMPORT_FIXTURE_MAP`은 정규화된 네이버 블로그 URL을 `voice_profile_agent/src` 내부 HTML fixture 경로로 매핑하는 JSON 객체이며, Docker smoke에서 외부 네트워크 없이 URL 학습을 검증하는 용도
+- 저장 백엔드는 `VOICE_PROFILE_STORAGE_BACKEND=minio` 로 MinIO 사용. 사용자 JWT 없이 서버 간 호출이 필요한 orchestrator 를 위해 `GET /api/v1/internal/voice-profiles/{id}?owner=...` 가 따로 있다. `X-Internal-Token` 헤더로 검증하고 `MOMENTLY_INTERNAL_TOKEN` env 가 비어 있으면 default-deny. gateway nginx 는 `^~ /api/v1/internal/` 를 404 로 차단해 외부 노출도 막음
 
 ### style_agent
 
