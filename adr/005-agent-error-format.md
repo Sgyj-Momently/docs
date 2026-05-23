@@ -106,9 +106,12 @@ HTTP 로 호출한다. 현재 에러 처리는 다음과 같이 일관성이 없
 | 1 | ADR + 표준 spec 문서화 (이 ADR — 본 PR) |
 | 2a | orchestrator 인프라 신설 — `AgentInvocationException` / `@ControllerAdvice` / 표준 파서 유틸. 기존 client 는 아직 `IllegalStateException` 던지지만 advice 가 둘 다 처리 (legacy fallback) |
 | 2b | reference 에이전트 적용 — `voice_profile_agent` (이미 `HTTPException` 사용 중이라 변경량이 적다) |
-| 2c | reference 클라이언트 적용 — `StyleAgentClient` (정통 `IllegalStateException` → `AgentInvocationException` 전환 시연용). `VoiceProfileAgentClient` 는 silent-fallback 패턴이라 정통 reference 로 부족하므로 함께 묶는다 |
+| 2c | reference 클라이언트 적용 — `StyleAgentClient` (정통 `IllegalStateException` → `AgentInvocationException` 전환 시연용). `VoiceProfileAgentClient` 는 silent-fallback 패턴이라 정통 reference 로 부족하므로 함께 묶는다. **사전 작업**: `AgentHttpRetryer` 가 `AgentInvocationException.isRetryable()` 과 `getRetryAfterSeconds()` 를 status 휴리스틱보다 우선 사용하도록 개선 |
+| 2d | **비동기 워크플로 경로 sanitization** — `WorkflowController.executeRestyle` / `WorkflowRunner` 의 catch 가 `AgentInvocationException` 이면 `getUserMessage()` 를, 아니면 sanitized fallback 메시지를 `Workflow.markFailed()` 로 전달. 이 PR 이후로 `RestClientResponseException.getMessage()` 같은 raw HTTP body 가 SSE/콘솔 UI 로 흘러가는 경로가 차단된다 |
+| 2e | **메트릭 계측** — `GlobalAgentExceptionHandler` 에 `Counter.builder("agent.invocation.error").tag("agent", ...).tag("error_code", ...).tag("status", ...)` 를 추가. Prometheus 대시보드와 알람을 작성할 수 있도록 함. orchestrator 의 micrometer 계측 부재가 ADR "이유"의 관측성 약속을 막고 있음 |
 | 3 | 나머지 8개 에이전트와 클라이언트 mechanical migration. 한 에이전트씩 별도 PR |
 | 4 | "HTTP 200 + `status:"error"`" 패턴 제거 및 deprecated 경로 정리. orchestrator advice 의 legacy fallback 도 함께 제거 |
+| 5 (후속 ADR) | **fault isolation** — circuit breaker / bulkhead 도입. 한 에이전트의 5xx 폭주가 다른 에이전트 호출 thread 풀을 고갈시키는 위험을 차단. 이 ADR 의 retry 정책과 함께 동작해야 하므로 별도 ADR 에서 결정 |
 
 각 단계가 끝나면 `docs/dev-log.md` 와 `docs/next-session-handoff.md` 를 갱신한다.
 
@@ -136,11 +139,19 @@ HTTP 로 호출한다. 현재 에러 처리는 다음과 같이 일관성이 없
 
 - 새 ADR 005 가 등록되어, 이후 에이전트 변경 PR 은 이 표준을 기준으로 리뷰한다.
 - 후속 PR 시리즈: 2a(orchestrator 인프라 신설) → 2b(voice_profile_agent reference)
-  → 2c(StyleAgentClient 정통 reference) → 단계 3 mechanical migration 8개 → 단계 4
-  legacy 제거.
+  → 2c(StyleAgentClient 정통 reference + retryer 연동) → 2d(비동기 경로 sanitization)
+  → 2e(메트릭) → 단계 3 mechanical migration 8개 → 단계 4 legacy 제거 → 단계 5
+  (별도 ADR) fault isolation.
 - `IllegalStateException` 에 의존하던 기존 client 와 테스트는 단계 2c·3 에서 함께
   수정. 테스트는 `AgentInvocationException` assertion 으로 갱신.
 - 단계 4 이전까지는 두 패턴이 공존하므로, orchestrator 파서는 표준·legacy(`HTTP 200
   + status:"error"`, `IllegalStateException` 메시지) 모두 처리할 수 있어야 한다.
-- 새 `@ControllerAdvice` 는 `AgentInvocationException` 외에도 일반 `Exception`
-  fallback 도 가져야 한다 (마이그레이션 중 미전환 에이전트의 raw 응답 노출 방지).
+- 단계 2a 의 `@ControllerAdvice` 는 disjoint 예외 타입(`AgentInvocationException`)
+  만 처리해 기존 `RestApiExceptionHandler` 와 충돌을 피한다. raw 응답 노출 방지의
+  최종 책임은 단계 2c·2d (client → 표준 예외 + 비동기 경로 sanitization) 가 진다.
+- production deploy 전 readiness 검토(cycle 7) 에서 잡힌 보안·운영 finding 은 단계
+  2a 의 인프라 PR 시리즈(`fix/agent-error-status-and-retry-after`,
+  `security/agent-error-traceid-sanitize`, `fix/agent-error-status-fallback-from-cause`,
+  `test/agent-error-advice-coexistence`, `feat/agent-error-add-agent-name-field`) 에
+  단계별로 반영됐다. 결과: production 차단 이슈 0건, retry-after 가드·log injection
+  방지·4xx pass-through·advice 공존 검증·agentName 구조화 로깅 키 모두 적용 완료.
