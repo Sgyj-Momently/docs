@@ -32,7 +32,7 @@
 - 원인: V4 가 meta 단계 컬럼만 추가하고 CHECK 제약은 기존 enum 목록 그대로 둠.
   `WorkflowStatus` enum 에 `META_GENERATING`, `META_GENERATED` 가 추가됐는데
   CHECK 에는 없었음
-- 조치: V5\_\_sync_workflow_status_check.sql 추가 — DROP IF EXISTS + ADD CONSTRAINT
+- 조치: `V5__sync_workflow_status_check.sql` 추가 — DROP IF EXISTS + ADD CONSTRAINT
   로 enum 전체를 다시 명시(idempotent). hotfix 로 운영 DB 에도 같은 SQL 직접
   적용. 다음 enum 추가 시 같은 PR 에서 CHECK 도 갱신하도록 커밋 메시지 directive
   로 박아둠
