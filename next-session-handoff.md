@@ -189,7 +189,12 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 ### 3. 운영/UX 검증
 
 - SSE 재연결/폴링 fallback의 브라우저 E2E 검증 추가
-- 에이전트별 헬스 체크와 장애 메시지 표준화 — `adr/005-agent-error-format.md` 가 표준 안. reference 구현은 `voice_profile_agent` 부터 적용 후 나머지 9개 에이전트로 mechanical migration
+- 에이전트별 헬스 체크와 장애 메시지 표준화 — `adr/005-agent-error-format.md` 가 표준 안.
+  단계 2a(orchestrator 인프라: `AgentInvocationException` / `@ControllerAdvice`) →
+  2b(voice_profile_agent reference) →
+  2c(StyleAgentClient 정통 reference) →
+  단계 3 mechanical migration 8개 →
+  단계 4 legacy 제거 순으로 진행한다
 
 ## 작업 시작 체크리스트
 
