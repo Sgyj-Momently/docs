@@ -190,11 +190,17 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 
 - SSE 재연결/폴링 fallback의 브라우저 E2E 검증 추가
 - 에이전트별 헬스 체크와 장애 메시지 표준화 — `adr/005-agent-error-format.md` 가 표준 안.
-  단계 2a(orchestrator 인프라: `AgentInvocationException` / `@ControllerAdvice`) →
+  단계 2a(orchestrator 인프라: `AgentInvocationException` / `@ControllerAdvice` / parser /
+  TraceContextSanitizer / drift guard / coexistence test) **완료** →
   2b(voice_profile_agent reference) →
-  2c(StyleAgentClient 정통 reference) →
+  2c(StyleAgentClient 정통 reference + `AgentHttpRetryer` 가 `retryable`/`retry_after_seconds`
+  존중하도록 개선) →
+  2d(`WorkflowController.executeRestyle` / `WorkflowRunner` 의 catch 가 raw 메시지 대신
+  `getUserMessage()` 또는 sanitized fallback 을 `markFailed` 로 전달) →
+  2e(Micrometer `agent.invocation.error` counter, tags=agent/error_code/status) →
   단계 3 mechanical migration 8개 →
-  단계 4 legacy 제거 순으로 진행한다
+  단계 4 legacy 제거 →
+  단계 5(후속 ADR — circuit breaker / bulkhead) 순으로 진행한다
 
 ## 작업 시작 체크리스트
 
