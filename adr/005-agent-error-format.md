@@ -149,6 +149,9 @@ HTTP 로 호출한다. 현재 에러 처리는 다음과 같이 일관성이 없
 - 단계 2a 의 `@ControllerAdvice` 는 disjoint 예외 타입(`AgentInvocationException`)
   만 처리해 기존 `RestApiExceptionHandler` 와 충돌을 피한다. raw 응답 노출 방지의
   최종 책임은 단계 2c·2d (client → 표준 예외 + 비동기 경로 sanitization) 가 진다.
+  (**원래 결정 수정**: 초기 ADR 에서는 일반 `Exception` fallback 도 포함했으나 단계 2a
+  production review 에서 `RestApiExceptionHandler` 와의 advice 우선순위 비결정성·
+  Spring 자체 예외 silencing 위험이 드러나 disjoint 로 좁힘.)
 - production deploy 전 readiness 검토(cycle 7) 에서 잡힌 보안·운영 finding 은 단계
   2a 의 인프라 PR 시리즈(`fix/agent-error-status-and-retry-after`,
   `security/agent-error-traceid-sanitize`, `fix/agent-error-status-fallback-from-cause`,
