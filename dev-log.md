@@ -1,5 +1,42 @@
 # Development Log
 
+## 2026-05-23
+
+### voice profile MinIO 마이그레이션 read 경로 마무리
+
+- 증상: voice_profile_agent 가 MinIO 로 잘 저장하는데 글쓰기 워크플로에서 학습된
+  말투가 안 적용되는 "보내고 끝" 상태
+- 원인: orchestrator 의 `StyleAgentClient.loadVoiceProfile()` /
+  `DraftAgentClient.loadVoiceProfile()` 가 로컬 파일시스템(`/var/lib/momently-voice`,
+  `../voice_profiles`, `voice_profiles`)만 뒤지는 fallback 만 있어 MinIO 전환 후
+  항상 빈 결과를 반환. style/draft payload 에 `voice_profile` 필드가 빠진 채로
+  진행돼 BUILTIN_VOICE_PROFILES fallback 또는 기본 톤만 적용되고 있었음
+- voice_profile_agent: `GET /api/v1/internal/voice-profiles/{id}?owner=...` 추가
+  (`X-Internal-Token` 헤더로 검증, 토큰 env 비면 default-deny). 사용자 JWT 없이
+  owner 명시로 owner-scoped / legacy 모두 검색
+- spring_orchestrator: `VoiceProfileAgentClient` / `VoiceProfileAgentProperties`
+  신설, Style/Draft client 가 storage backend 와 무관하게 HTTP 로 가져오도록 교체.
+  `WorkflowRunner` / `WorkflowController.restyle` 호출 시 `Workflow.ownerUsername`
+  같이 전달. internal-token 미설정 시 client 가 호출 자체를 건너뛰는 fail-closed
+- deploy: `MOMENTLY_INTERNAL_TOKEN` 환경변수를 voice agent ↔ orchestrator 양쪽
+  컨테이너에 `:?` 형태로 강제. nginx 에 `^~ /api/v1/internal/ → 404` 추가해
+  defense-in-depth 로 외부 노출 차단
+- 검증: voice_profile_agent verify 50/50 + 87% 커버리지, orchestrator
+  `gradle test jacocoTestReport jacocoTestCoverageVerification` BUILD SUCCESSFUL,
+  docker network 내부 직접 호출 200, 외부 게이트 호출 404 확인
+
+### workflows_status_check 갱신 — META_GENERATING / META_GENERATED 포함
+
+- 증상: 메타 단계로 진입하려는 update 가 `violates check constraint
+  "workflows_status_check"` 로 실패해 워크플로가 `FAILED` 로 빠짐
+- 원인: V4 가 meta 단계 컬럼만 추가하고 CHECK 제약은 기존 enum 목록 그대로 둠.
+  `WorkflowStatus` enum 에 `META_GENERATING`, `META_GENERATED` 가 추가됐는데
+  CHECK 에는 없었음
+- 조치: V5\_\_sync_workflow_status_check.sql 추가 — DROP IF EXISTS + ADD CONSTRAINT
+  로 enum 전체를 다시 명시(idempotent). hotfix 로 운영 DB 에도 같은 SQL 직접
+  적용. 다음 enum 추가 시 같은 PR 에서 CHECK 도 갱신하도록 커밋 메시지 directive
+  로 박아둠
+
 ## 2026-05-08
 
 - 콘솔 새 글 쓰기 UI를 일반 사용자용 3단계 흐름으로 정리하고 프로젝트 ID 입력을 고급 옵션으로 이동
