@@ -33,6 +33,7 @@
 4. [orchestrator-design.md](./orchestrator-design.md)
 5. [adr/003-id-strategy.md](./adr/003-id-strategy.md)
 6. [adr/004-database-strategy.md](./adr/004-database-strategy.md)
+7. [adr/005-agent-error-format.md](./adr/005-agent-error-format.md)
 
 ## 현재 완료 상태
 
@@ -188,7 +189,7 @@ RUN_POSTGRES_INTEGRATION_TESTS=true env GRADLE_USER_HOME=.gradle-home GRADLE_OPT
 ### 3. 운영/UX 검증
 
 - SSE 재연결/폴링 fallback의 브라우저 E2E 검증 추가
-- 에이전트별 헬스 체크와 장애 메시지 표준화
+- 에이전트별 헬스 체크와 장애 메시지 표준화 — `adr/005-agent-error-format.md` 가 표준 안. reference 구현은 `voice_profile_agent` 부터 적용 후 나머지 9개 에이전트로 mechanical migration
 
 ## 작업 시작 체크리스트
 
