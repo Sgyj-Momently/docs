@@ -78,7 +78,7 @@ content script (blog.naver.com / SmartEditor iframe)
 | 3 | **발행 버튼 자동 클릭 금지 — 필드 자동 채움까지만** | 약관 회색지대의 안전선. "본인이 발행 버튼을 직접 누른다" 가 자동화 발행과 본인 작성 보조를 가르는 경계 |
 | 4 | **manifest v3, Chrome + Whale 타겟** | 둘 다 Chromium 기반 코드 공유. Whale 은 네이버 사용자층 + 네이버 로그인 세션 상존 비율 높음 |
 | 5 | **content script 주입 도메인 화이트리스트** | `momently_console` 오리진 + `*.blog.naver.com` 두 곳에만 주입. 그 외 페이지 접근 권한 없음 |
-| 6 | **remote config kill switch** | 확장이 기동 시 우리 서버의 config (예: `GET /api/v1/extension/config`) 를 조회해 `enabled:false` 면 즉시 기능 비활성화. 네이버 정책 변경·차단 탐지 시 스토어 심사(수일) 없이 원격으로 끌 수 있는 안전장치 |
+| 6 | **remote config kill switch** | 확장이 기동 시 우리 서버의 config (예: `GET /api/v1/extension/config`) 를 조회해 `enabled:false` 면 즉시 기능 비활성화. 네이버 정책 변경·차단 탐지 시 스토어 심사(수일) 없이 원격으로 끌 수 있는 안전장치. config 조회 실패 시는 **fail-closed (기능 비활성화)** 를 기본으로 — 안전선이 네트워크 장애로 무력화되지 않도록 |
 
 ### postMessage 보안
 
@@ -105,7 +105,7 @@ origin 검증만으로는 부족하다 (콘솔 origin 에 XSS 가 있으면 동�
   fetch 는 **순차가 아닌 병렬**(`Promise.all`) 로 실행해 TTL 내 완료를 노린다. 그래도
   만료되면 background 가 콘솔에 재발급을 요청하는 메시지 프로토콜로 fallback (확장의
   stateless 원칙 유지 — 토큰을 들지 않고 콘솔에 위임). 이미지 상한을 정해 TTL 을 산정
-  (예: 최대 30장 기준 5분)
+  (예: 최대 30장 기준 5분 — 이 값은 placeholder 이며 7c PoC 의 실측 fetch 시간으로 확정)
 - **확장 ID ↔ storage CORS**: manifest v3 의 background fetch origin 은
   `chrome-extension://<id>` 이며 dev(unpacked) ↔ 스토어 배포 시 ID 가 달라진다. 또한
   다수 object storage(S3/R2/MinIO) 는 `chrome-extension:` scheme 을 CORS origin 으로
