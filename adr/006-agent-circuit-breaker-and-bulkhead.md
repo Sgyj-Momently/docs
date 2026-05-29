@@ -159,9 +159,9 @@ binder 로 노출하는 **실제** metric 은 다음과 같다. label 은 `agent
 식별자)이다:
 
 - `resilience4j_circuitbreaker_state` — gauge × {name, state}. 현재 상태 series 만 1 (state=closed/open/half_open/...)
-- `resilience4j_circuitbreaker_failure_rate` / `_slow_call_rate` — gauge × {name}. 최소 호출수 미만이면 -1
+- `resilience4j_circuitbreaker_failure_rate`, `resilience4j_circuitbreaker_slow_call_rate` — gauge × {name}. 최소 호출수 미만이면 -1
 - `resilience4j_circuitbreaker_not_permitted_calls_total` — counter × {name}. OPEN 으로 단락 차단된 호출 수(차단 거부 관측용)
-- `resilience4j_bulkhead_available_concurrent_calls` / `_max_allowed_concurrent_calls` — gauge × {name}
+- `resilience4j_bulkhead_available_concurrent_calls`, `resilience4j_bulkhead_max_allowed_concurrent_calls` — gauge × {name}
 
 본 ADR 초안이 가정한 `agent.circuit_breaker.transition` / `agent.bulkhead.full` 같은 별도
 counter 는 실재하지 않는다. 상태 전이는 `resilience4j_circuitbreaker_state` 의 변화로,
