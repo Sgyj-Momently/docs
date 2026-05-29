@@ -2,7 +2,7 @@
 
 ## 상태
 
-초안 (Proposed)
+Accepted — 단계 6a·6b·6c 구현·배포 완료 (2026-05). 6d(degradation)는 선택으로 보류.
 
 ## 날짜
 
@@ -57,11 +57,15 @@ ADR 005 §결과 의 "단계 5: 별도 ADR (circuit breaker / bulkhead)" 약속�
 ### 의존성
 
 ```
-implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j'
+implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.3.0'
+implementation 'io.github.resilience4j:resilience4j-bulkhead:2.3.0'
+implementation 'io.github.resilience4j:resilience4j-micrometer:2.3.0'
 ```
 
-(Spring Cloud Circuit Breaker abstraction 보다 Resilience4j 의 fluent API 가
-세부 튜닝에 유리하므로 starter 만 활용하고 Bean 은 직접 구성한다)
+(spring-cloud starter / `resilience4j-spring-boot3` 는 `@CircuitBreaker` 류 AOP
+annotation 을 classpath 에 끌어와 의도치 않은 자동 적용 위험이 있어 쓰지 않는다.
+core 3 모듈만 도입해 fluent API 로 Bean 을 직접 구성하면, 의존성 추가만으로 기존
+spring-web bean 에 부수효과가 생기지 않는다 — 실제 구현은 이 방식을 택했다.)
 
 ### 1) Circuit Breaker — 에이전트당 1 인스턴스
 
@@ -150,21 +154,27 @@ ADR 005 의 advice 가 이 envelope 을 그대로 사용자 화면 / SSE 에 전
 
 ### 4) 관측성
 
-- 신규 metric: `agent.circuit_breaker.state` — gauge 0/1 × {agent, state}. CB 상태 변화 즉시 노출
-- 신규 metric: `agent.circuit_breaker.transition` — counter × {agent, from, to}. 누적 transition 회수
-- 신규 metric: `agent.bulkhead.available_concurrent_calls` — gauge × {agent}
-- 신규 metric: `agent.bulkhead.full` — counter × {agent}. reject 누적
+micrometer-resilience4j(`TaggedCircuitBreakerMetrics` / `TaggedBulkheadMetrics`)가 자동
+binder 로 노출하는 **실제** metric 은 다음과 같다. label 은 `agent` 가 아니라 `name`(= agent
+식별자)이다:
 
-micrometer-resilience4j 가 위 4 종을 자동 binder 로 노출하므로 신규 코드 없음 —
-Bean 으로 CircuitBreakerRegistry / BulkheadRegistry 를 노출하면 actuator 가 가져간다.
+- `resilience4j_circuitbreaker_state` — gauge × {name, state}. 현재 상태 series 만 1 (state=closed/open/half_open/...)
+- `resilience4j_circuitbreaker_failure_rate` / `_slow_call_rate` — gauge × {name}. 최소 호출수 미만이면 -1
+- `resilience4j_circuitbreaker_not_permitted_calls_total` — counter × {name}. OPEN 으로 단락 차단된 호출 수(차단 거부 관측용)
+- `resilience4j_bulkhead_available_concurrent_calls` / `_max_allowed_concurrent_calls` — gauge × {name}
+
+본 ADR 초안이 가정한 `agent.circuit_breaker.transition` / `agent.bulkhead.full` 같은 별도
+counter 는 실재하지 않는다. 상태 전이는 `resilience4j_circuitbreaker_state` 의 변화로,
+bulkhead 포화는 `available_concurrent_calls == 0` 으로 관측한다. Bean 으로
+CircuitBreakerRegistry / BulkheadRegistry 를 노출하면 actuator `/actuator/prometheus` 가 가져가며 신규 코드는 없다.
 
 ### 5) 단계별 적용
 
 | 단계 | 산출물 | 검증 기준 |
 |---|---|---|
-| **6a** | Resilience4j 의존성 + `AgentResilienceConfig` (CB/Bulkhead Bean 정의, agent 별 인스턴스 생성). `AgentHttpRetryer` 미수정 — Bean 만 노출. metric 4 종 자동 노출 확인 | (1) actuator `/actuator/prometheus` 에 신규 metric 4 종 노출. (2) 기존 호출 동작 변화 0 — `grep -rn "@CircuitBreaker\|@Bulkhead\|@Retry\|@TimeLimiter" src/main` 으로 기존 코드에 Resilience4j AOP annotation 부재 확인 (의존성 도입만으로 AOP 가 spring-web bean 에 자동 적용되지 않도록). (3) integration test: 같은 endpoint 부하 1000 req 에 대해 6a 도입 전후 latency p99 차이 ±5% 이내 |
+| **6a** | Resilience4j 의존성 + `AgentResilienceConfig` (CB/Bulkhead Bean 정의, agent 별 인스턴스 생성). `AgentHttpRetryer` 미수정 — Bean 만 노출. CB/Bulkhead metric 자동 노출 확인 | (1) actuator `/actuator/prometheus` 에 신규 `resilience4j_*` metric 노출. (2) 기존 호출 동작 변화 0 — `grep -rn "@CircuitBreaker\|@Bulkhead\|@Retry\|@TimeLimiter" src/main` 으로 기존 코드에 Resilience4j AOP annotation 부재 확인 (의존성 도입만으로 AOP 가 spring-web bean 에 자동 적용되지 않도록). (3) integration test: 같은 endpoint 부하 1000 req 에 대해 6a 도입 전후 latency p99 차이 ±5% 이내 |
 | **6b** | `AgentHttpRetryer.executeAndParse` 가 CB.decorate + Bulkhead.decorate 로 감싸도록 변경. failure 분류 Predicate 도 구현. envelope.retryable=false + 4xx 는 ignore. Open / BulkheadFull 의 envelope 변환 | 4xx 만 발생하는 부하 패턴이 CB 를 열지 않음, 5xx 50% 부하가 CB 를 30 초 OPEN 시킴 (integration test) |
-| **6c** | 운영 적용. agent 별 fine-tune (예: `meta_agent` 는 slowCall 임계 60s). 알람 룰: `agent.circuit_breaker.transition{to="OPEN"} > 0` 가 Slack 통지 | 7 일간 false-open 0, real outage 시 CB 가 자동 회복 (manual restart 없이 HALF_OPEN → CLOSED 복귀) |
+| **6c** | 운영 적용. 알람 룰: `resilience4j_circuitbreaker_state` 가 open/half-open 으로 2분 지속 → warning, 15분 → critical(severity 라벨로 alertmanager Slack/메일 라우팅). Grafana CB/Bulkhead 패널. 알람·대시보드는 중앙 관측 레포(mac-infra)에 위치. **agent 별 fine-tune 은 관측 데이터 확보 후로 보류.** | 7 일간 false-open 0, real outage 시 CB 가 자동 회복 (manual restart 없이 HALF_OPEN → CLOSED 복귀) |
 | **6d** (선택) | per-workflow degradation. 예: `meta_agent` 가 OPEN 이면 워크플로를 META_SKIPPED 로 완료시키고 콘솔에 "메타 생성 누락" 표시 | UX QA 통과 |
 
 6a-c 는 필수. 6d 는 도메인 trade-off 가 커서 별도 PR / discussion 으로 분리.
@@ -218,7 +228,7 @@ Bean 으로 CircuitBreakerRegistry / BulkheadRegistry 를 노출하면 actuator 
 - 분산 환경 (orchestrator instance 다수) 에서 CB 는 instance-local — 각 인스턴스가 독립 학습. 운영상 큰 문제 아니나, 한 인스턴스가 학습한 OPEN 상태가 다른 인스턴스에 즉시 전파되지는 않음. 단계 6c 의 알람 룰은 instance 별 metric 으로 분리해서 봐야 함
 
 **중립**
-- micrometer 자동 노출 metric 4 종 → Grafana 패널 / 알람 룰 신규 작성 필요. ADR 005 단계 2e 의 패턴 (PR #33) 을 그대로 차용
+- micrometer 자동 노출 `resilience4j_*` metric → Grafana 패널 / 알람 룰 신규 작성 필요. ADR 005 단계 2e 의 패턴 (PR #33) 을 그대로 차용
 
 **대안 (rejected)**
 - **Hystrix**: 2019 maintenance mode. 신규 도입 부적합
